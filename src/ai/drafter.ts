@@ -136,6 +136,9 @@ export async function draftResponse(params: {
   analysis: ReviewAnalysis;
   voiceProfile: VoiceProfileInput;
   restaurantName: string;
+  /** Override drafter temperature. Defaults to 0.7. The regenerate flow uses
+   *  ~0.9 to get a genuinely different alternative draft. */
+  temperature?: number;
 }): Promise<DraftResult> {
   const voiceSection = buildVoiceProfileSection(params.voiceProfile);
 
@@ -172,7 +175,7 @@ Write the response now. Return the JSON only.`;
     systemPrompt: DRAFTER_SYSTEM_PROMPT,
     userPrompt,
     maxTokens: 2048,
-    temperature: 0.7,
+    temperature: params.temperature ?? 0.7,
     responseSchema: draftSchema,
   });
 

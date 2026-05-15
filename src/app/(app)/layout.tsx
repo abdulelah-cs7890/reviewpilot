@@ -18,36 +18,49 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div dir="rtl" lang="ar" className="min-h-screen bg-ink-50 text-ink-800">
       <header className="border-b border-ink-100 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
-          <div className="flex items-center gap-6">
-            <Link href="/inbox" className="text-lg font-semibold tracking-tight text-ink-900">
-              ReviewPilot
-            </Link>
-            {restaurant && (
-              <span className="text-sm text-ink-600">· {restaurant.name}</span>
-            )}
-            {result.isDemo && (
-              <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs text-accent-dark">
-                وضع تجريبي
-              </span>
-            )}
+        <div className="mx-auto max-w-6xl px-4 py-3 sm:px-6 sm:py-4">
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            <div className="flex items-center gap-3">
+              <Link href="/inbox" className="text-lg font-semibold tracking-tight text-ink-900">
+                ReviewPilot
+              </Link>
+              {restaurant && (
+                <span className="hidden text-sm text-ink-600 sm:inline">
+                  · {restaurant.name}
+                </span>
+              )}
+              {result.isDemo && (
+                <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs text-accent-dark">
+                  تجريبي
+                </span>
+              )}
+            </div>
+            <nav className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+              {restaurant && (
+                <>
+                  <Link href="/inbox" className="text-ink-600 hover:text-ink-900">
+                    التقييمات
+                  </Link>
+                  <Link href="/dashboard" className="text-ink-600 hover:text-ink-900">
+                    اللوحة
+                  </Link>
+                  <Link href="/settings" className="text-ink-600 hover:text-ink-900">
+                    الإعدادات
+                  </Link>
+                  <Link
+                    href="/inbox/new"
+                    className="rounded-lg bg-ink-100 px-3 py-1 text-ink-700 hover:bg-ink-200"
+                  >
+                    + إضافة
+                  </Link>
+                </>
+              )}
+              <SignOutButton />
+            </nav>
           </div>
-          <nav className="flex items-center gap-4 text-sm">
-            {restaurant && (
-              <>
-                <Link href="/inbox" className="text-ink-600 hover:text-ink-900">
-                  التقييمات
-                </Link>
-                <Link href="/inbox/new" className="text-ink-600 hover:text-ink-900">
-                  + إضافة تقييم
-                </Link>
-              </>
-            )}
-            <SignOutButton />
-          </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">{children}</main>
     </div>
   );
 }

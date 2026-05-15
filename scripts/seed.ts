@@ -10,7 +10,7 @@
  * Run with: npm run db:seed
  */
 
-import { eq } from 'drizzle-orm';
+import { eq, like } from 'drizzle-orm';
 import { db, user, restaurants, voiceProfiles, reviews, drafts } from '../src/db';
 import { DEMO_USER_EMAIL } from '../src/lib/auth-utils';
 
@@ -27,7 +27,7 @@ const REVIEWS_SEED = [
     sentiment: 2,
     topics: ['food_quality', 'food_taste', 'service_speed'],
     urgency: 'low' as const,
-    daysAgo: 1,
+    daysAgo: 2,
     draftText:
       'يا هلا والله بفهد، كلامك عن الكبسة الخرافية والخدمة السريعة يسعدنا كثير. شهادتك وزياراتك المتكررة هالشهر شرف كبير لنا، والله يعافيك. ننتظرك دايماً.',
     draftLanguage: 'ar' as const,
@@ -41,7 +41,7 @@ const REVIEWS_SEED = [
     sentiment: 0,
     topics: ['food_taste', 'wait_time', 'service_speed'],
     urgency: 'medium' as const,
-    daysAgo: 2,
+    daysAgo: 5,
     draftText:
       'يا هلا سارة، يسعدنا إن الأكل أعجبك. وبخصوص انتظارك ٤٥ دقيقة، هذا وقت طويل فعلًا ونعتذر لك عليه. شغالين على تحسين سرعة الخدمة وإن شاء الله المرة الجاية تكون تجربتك أفضل بكثير. إدارة المطعم',
     draftLanguage: 'ar' as const,
@@ -56,7 +56,7 @@ const REVIEWS_SEED = [
     sentiment: -2,
     topics: ['food_temperature', 'service_attitude'],
     urgency: 'high' as const,
-    daysAgo: 3,
+    daysAgo: 8,
     draftText:
       'يا هلا بمحمد، نعتذر لك جداً على تجربة الأكل البارد وتعامل الكاشير اللي ما كان بالمستوى المطلوب. هذا الشيء ما يرضينا أبدًا ونحب نعتذر منك بشكل خاص ونعوضك. لو تتواصل معنا على واتساب 0500000000، نتشرف بخدمتك. إدارة المطعم',
     draftLanguage: 'ar' as const,
@@ -71,7 +71,7 @@ const REVIEWS_SEED = [
     sentiment: 2,
     topics: ['food_quality', 'food_taste', 'staff_friendliness'],
     urgency: 'low' as const,
-    daysAgo: 4,
+    daysAgo: 12,
     draftText:
       "Thank you, Reem! We're delighted you enjoyed the mixed grill and found our service attentive. We can't wait to welcome you and your family back soon. Restaurant management.",
     draftLanguage: 'en' as const,
@@ -86,7 +86,7 @@ const REVIEWS_SEED = [
     sentiment: -1,
     topics: ['delivery', 'food_quality', 'wait_time', 'service_speed'],
     urgency: 'medium' as const,
-    daysAgo: 5,
+    daysAgo: 16,
     draftText:
       "Ahmed, we're really sorry to hear about your recent order. A 90-minute delay, undercooked rice, and no answer when you called is definitely not the experience we want you to have. Please contact us directly so we can address this properly and make things right for you. Restaurant management.",
     draftLanguage: 'en' as const,
@@ -101,7 +101,7 @@ const REVIEWS_SEED = [
     sentiment: 1,
     topics: ['food_taste', 'ambiance', 'parking'],
     urgency: 'low' as const,
-    daysAgo: 6,
+    daysAgo: 20,
     draftText:
       'Hello Nora! Glad you loved the kebab and the vibes for your date night. We know the parking can be a bit tricky sometimes, but we hope to see you again soon إن شاء الله. إدارة المطعم',
     draftLanguage: 'mixed' as const,
@@ -130,7 +130,7 @@ const REVIEWS_SEED = [
     sentiment: 2,
     topics: ['food_quality', 'food_taste'],
     urgency: 'low' as const,
-    daysAgo: 7,
+    daysAgo: 28,
     draftText: 'الله يعافيك يا علي، كلامك عن الأكل الممتاز يسعدنا جداً. نتمنى نشوفك دايماً. إدارة المطعم',
     draftLanguage: 'ar' as const,
   },
@@ -194,14 +194,14 @@ async function main() {
     console.log('Voice profile already exists');
   }
 
-  // 4. Reviews + drafts
+  // 4. Reviews + drafts.
+  // Seed reviews use the 'seed_*' externalId prefix so we can safely
+  // delete + re-insert them to refresh postedAt staggering and edits
+  // to draft text. Non-seed reviews (real manual paste) are not touched.
+  await db.delete(reviews).where(like(reviews.externalId, 'seed_%'));
+
   let inserted = 0;
   for (const r of REVIEWS_SEED) {
-    const existing = await db.query.reviews.findFirst({
-      where: eq(reviews.externalId, r.externalId),
-    });
-    if (existing) continue;
-
     const [review] = await db
       .insert(reviews)
       .values({

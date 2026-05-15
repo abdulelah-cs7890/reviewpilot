@@ -1,102 +1,135 @@
 # ReviewPilot
 
-**AI review response drafts for Saudi restaurants — in their actual voice, in their actual dialect.**
+**AI-drafted Google review responses for Saudi restaurants — in the reviewer's language and the restaurant's voice.**
 
-Most Riyadh restaurants live and die by their Google reviews, but the existing tools (Birdeye, Podium, even Google's auto-suggestions) butcher Gulf Arabic and produce robotic translation-Arabic that no Saudi customer would accept. ReviewPilot reads each review, drafts a culturally-correct response in the same language and register, and lets the owner approve it in seconds.
+Reviews come in Arabic (Gulf or MSA), English, or code-switched. ReviewPilot reads each review, drafts a culturally-correct reply that **matches the reviewer's dialect and the restaurant's tone profile**, and gives the owner an inbox where they edit, copy, and mark-as-responded in seconds.
+
+![Inbox screenshot](public/screenshots/inbox.png)
 
 ---
 
-## Why this exists
+## ➡️ Try the live demo
 
-Google Maps reviews are the single biggest driver of foot traffic for independent Saudi restaurants. The owner-side reality:
+**[reviewpilot.vercel.app](https://reviewpilot.vercel.app)** — click "Try the demo" on the login page. No signup, no setup. You'll land in a pre-seeded restaurant with 8 real-feel reviews already analyzed and draft replies ready to copy.
 
-- Reviews arrive in Saudi/Gulf Arabic, English, and code-switched mixes
-- Owners are busy and respond inconsistently or not at all
-- Generic review tools were built for the US market and produce stiff, translated-feeling Arabic
-- A bad public response can do more damage than no response
+---
 
-ReviewPilot is built for this specific gap. One restaurant, one inbox, one tap to approve.
+## What's built
 
-## What it does
+| Surface | What it does |
+|---|---|
+| **Landing** (`/`, `/en`) | Bilingual (Arabic primary, English at `/en`) with waitlist form |
+| **Auth** | BetterAuth magic-link via Resend (console-fallback in dev) + a portfolio-only "demo mode" cookie for visitors |
+| **Onboarding** | Voice profile picker — formality, dialect, religious phrases, signoff |
+| **Inbox** | RTL-first list, urgency-first sort, chip filters by urgency / sentiment / language / status |
+| **Detail view** | Review + AI analysis tags + editable draft + copy to clipboard + mark-as-responded |
+| **Regenerate** | Second AI call at higher temperature → alternative draft you can switch to |
+| **Manual paste** | Drop a review text in, get analysis + draft in ~6–10s |
+| **Settings** | Edit the voice profile after onboarding; new drafts pick up the new voice |
+| **Dashboard** | Sentiment-over-time line chart, topic×sentiment heatmap, urgency split, response-rate stat |
 
-- **Pulls reviews** from Google Business Profile (or weekly scrape as fallback)
-- **Analyzes** each review for sentiment, topics, urgency, and language
-- **Drafts** a response in the same language and register as the review — Gulf casual stays Gulf casual; formal MSA stays formal MSA; code-switched English-Arabic stays code-switched
-- **Voice profile** built in 60 seconds from sample responses the owner picks
-- **Daily WhatsApp digest** with everything that came in overnight, drafts pre-generated
+## Architecture
 
-## Interesting engineering decisions
+```
+                ┌──────────────────────┐
+   Reviewer ───►│  Next.js App Router  │
+                │  (RTL-first, server- │
+                │   actions for writes)│
+                └──┬──────────────┬────┘
+                   │              │
+                   ▼              ▼
+        ┌─────────────────┐  ┌─────────────────┐
+        │ Gemini Flash-Lite│  │ Gemini Flash    │
+        │  (analyzer:     │  │  (drafter:      │
+        │   sentiment,    │  │   in-voice      │
+        │   topics,       │  │   reply, typed  │
+        │   urgency,      │  │   responseSchema)│
+        │   typed schema) │  │                 │
+        └────────┬────────┘  └────────┬────────┘
+                 │                    │
+                 ▼                    ▼
+              ┌──────────────────────────┐
+              │  Drizzle ORM             │
+              └────────────┬─────────────┘
+                           ▼
+              ┌──────────────────────────┐
+              │  Neon Postgres (free)    │
+              └──────────────────────────┘
 
-### Dialect-aware prompting, not fine-tuning
-Saudi/Gulf Arabic data is scarce and noisy. Instead of fine-tuning, ReviewPilot uses carefully-engineered system prompts plus restaurant-specific few-shot examples picked during onboarding. This gets a usable voice in 60 seconds instead of weeks of training data collection.
+Auth path (parallel):
+  Email → BetterAuth magic-link → Resend (or console in dev)
+  Demo button → signed cookie → seeded demo user (portfolio shim)
+```
 
-### Two-model pipeline
-- Gemini 2.5 Flash-Lite for review analysis (sentiment, topics, urgency, language) — cheap, fast, runs on every new review
-- Gemini 2.5 Flash for response drafting — quality matters here
+Every AI call goes through one file (`src/ai/client.ts`) — swap providers by changing that file. The two prompts (`src/ai/analyzer.ts`, `src/ai/drafter.ts`) carry all of the Saudi-specific logic: dialect detection rules, forbidden-phrase list in both English (`"We strive to..."`) and Arabic (`"نسعى دائمًا..."`, `"ملاحظاتكم القيمة"`), register-matching, signoff-language matching.
 
-Splitting these keeps cost minimal (free tier covers ~125 fully-processed reviews/day) while keeping draft quality high. The provider abstraction makes it easy to swap to Claude Sonnet for production-grade Arabic quality.
+## Interesting AI choices
 
-### Voice profile via sample selection
-Asking an owner to write brand guidelines doesn't work — you get something unusable. Asking them to pick 2-3 sample responses that feel like their brand gets you a usable system prompt addendum in under a minute. The selected samples become few-shot examples in every draft.
+- **Two-tier model pipeline.** Flash-Lite for cheap fast analysis (sentiment / topics / urgency), Flash for drafts where quality matters. Both use Gemini's typed `responseSchema` so the model can't invent fields.
+- **Reviewer-register matching, not restaurant-register matching.** A doctor writing formal MSA gets a formal MSA reply, even if the restaurant's profile says Gulf casual. Same rule for code-switched reviewers — the draft mirrors their mix.
+- **Forbidden phrases.** Both English and Arabic AI clichés are explicitly blocked (`"We strive to provide..."`, `"Thank you for taking the time..."`, `"نسعى دائمًا"`, `"ملاحظاتكم القيمة"`, `"نتطلع لخدمتكم"`). Found and added these through iteration on real sample reviews.
+- **Signoff language matching.** Voice profile signoff is `"إدارة المطعم"` by default — for English responses the drafter translates it to `"Restaurant management"` rather than producing a half-Arabic-half-English close.
+- **Sample-driven prompt iteration.** [`samples/reviews.ts`](samples/reviews.ts) holds 25 realistic Saudi reviews (Gulf rave, hygiene complaint with regulator threat, delivery-app context, prayer-time issue, allergy reaction, expat writing English, formal sheikh, code-switched). `npm run ai:test` runs the engine against all of them.
+- **Retry/backoff that honors Gemini's `retryDelay`** in 429 errors, instead of fixed exponential. Cuts wasted wait time when the API tells us exactly how long.
 
-### Forbidden phrase list
-The system prompt explicitly bans the most common AI-translation tells in Arabic ("نقدر ملاحظاتكم القيمة", "نأسف لسماع ذلك") and the most common AI-English tells ("We strive to provide...", "Thank you for taking the time..."). This single constraint did more for output quality than any other prompt tweak.
-
-## Stack
-
-- Next.js 15 (App Router) + TypeScript
-- Postgres on Neon + Drizzle ORM
-- **Gemini API** (free tier for dev, easy swap to Claude for production)
-- BetterAuth
-- Inngest for background jobs
-- WhatsApp Cloud API for daily digest
-- Tailwind + shadcn/ui with RTL support
-- Vercel
-
-The AI layer is built with a provider abstraction (`src/ai/client.ts`) so the
-LLM provider can be swapped in one file. Currently using Gemini 2.5 Flash for
-drafts and Flash-Lite for analysis. Swap to Claude when budget allows for
-better Arabic quality.
-
-## Local development
+## Run locally
 
 ```bash
-# Install
+git clone https://github.com/abdulelah-cs7890/reviewpilot
+cd reviewpilot
 npm install
 
-# Set up env (copy .env.example to .env.local and fill in)
+# Copy env template and fill in your keys
 cp .env.example .env.local
+# At minimum, set GEMINI_API_KEY (free at aistudio.google.com/apikey)
+# and DATABASE_URL (free at neon.tech)
 
-# Run prompt iteration loop — this is the core dev tool
-npm run ai:test                       # run all sample reviews
-npm run ai:test -- --id=gulf-angry    # just one
-npm run ai:test -- --profile=formal   # try a different voice profile
-
-# Database
-npm run db:generate    # generate migrations from schema
-npm run db:migrate     # apply migrations
-npm run db:studio      # browse data
-
-# Dev server
-npm run dev
+npm run db:generate
+npm run db:migrate
+npm run db:seed      # creates the demo restaurant with 8 pre-analyzed reviews
+npm run dev          # http://localhost:3000
 ```
 
-## Project structure
+Then click "Try the demo" on `/login` to skip the email step.
 
-```
-src/
-  ai/              # the prompt engine — the heart of the product
-    client.ts      # Anthropic client + model + version constants
-    analyzer.ts    # sentiment + topics + urgency + language detection
-    drafter.ts    # response draft generation (the headline feature)
-  db/              # Drizzle schema + client
-  app/             # Next.js routes
-  components/
-  inngest/         # background jobs
-samples/           # realistic Saudi review samples for prompt iteration
-scripts/           # CLI tooling (test-ai.ts, seed.ts)
+To exercise the AI engine directly without the UI:
+
+```bash
+npm run ai:test                          # all 25 sample reviews, warm voice profile
+npm run ai:test -- --id=urgent-hygiene   # one specific review
+npm run ai:test -- --profile=formal      # change voice profile
 ```
 
-## Status
+## Tech
 
-In active development. See [docs/roadmap.md](docs/roadmap.md) for the launch plan.
+- **Next.js 15** (App Router) · **TypeScript** · **Tailwind CSS**
+- **Drizzle ORM** on **Neon Postgres** (free tier)
+- **BetterAuth** with magic-link plugin + Resend
+- **Gemini Flash-Lite** (analyzer) + **Gemini Flash** (drafter) via `@google/genai`, typed `responseSchema`
+- **Zod** for server-action input validation
+- **IBM Plex Sans Arabic** + **Inter** via `next/font`
+
+## What's deferred (intentionally)
+
+This is a portfolio project, not a real launch. The original product story includes integrations that need paid infra or business-identity verification — those are scoped out and documented as future work:
+
+- **Google Business Profile API** integration (manual paste is the v1 review source; the schema already supports a `source: 'google'` enum value for narrative continuity)
+- **WhatsApp Cloud API** daily digest (Meta Business verification is a 1–2 week dance)
+- **Inngest background jobs** (manual paste fires the analyze+draft inline from the server action; ~6–10s is fine for a demo)
+- **Real email digests** via Resend (the magic-link sender exists; periodic digests don't)
+- **Multi-user / teams** — the schema models 1 user → 1 restaurant
+- **Provider migration** — `src/ai/client.ts` is a one-file swap to Groq / Cohere / local Ollama if Gemini quotas ever bite. Not switched today because Gemini's Gulf-dialect quality is the validated baseline.
+
+## Quota note
+
+Gemini free tier is **20 requests/model/day** as of 2026-05-15. The demo button + seeded reviews use **zero** API calls so visitors can explore freely. Manual-paste and regenerate use ~2 calls each; if the daily quota hits, those flows surface a friendly Arabic "demo at capacity, try tomorrow" message instead of crashing.
+
+## Notes for portfolio reviewers
+
+- **The "demo mode" button is a deliberate shim** for portfolio reviewers — it's a signed cookie that bypasses the magic-link flow so you can explore without setting up email. In a real production deployment this would not exist; only the magic-link path would. See `src/lib/auth-utils.ts` for the implementation + the comment block explaining the trade-off.
+- **The provider abstraction in `src/ai/client.ts`** was built on purpose — the original prompt iteration was against Claude, and the swap to Gemini was a one-file change. The abstraction stays as a hedge against rate-limit or quality changes from either vendor.
+- **Sample reviews are deliberately diverse** — not just to look impressive but because each one exposes a real failure mode (dialect misclassification, signoff language mismatch, urgent-vs-medium scoring on allergy complaints). The `samples/reviews.ts` file is the source of truth for prompt iteration.
+
+---
+
+*Built solo as a portfolio project. Not affiliated with any restaurant or restaurant tech company.*

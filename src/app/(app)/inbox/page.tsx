@@ -1,36 +1,63 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { eq, sql, desc } from 'drizzle-orm';
+import { eq, sql, desc, and, gte, lte, type SQL } from 'drizzle-orm';
 import { db, restaurants, reviews } from '@/db';
 import { requireUser } from '@/lib/auth-utils';
 import { UrgencyBadge } from '@/components/inbox/UrgencyBadge';
 import { SentimentTag } from '@/components/inbox/SentimentTag';
 import { StatusBadge } from '@/components/inbox/StatusBadge';
+import { InboxFilters } from '@/components/inbox/InboxFilters';
 
 const SNIPPET_LEN = 140;
 
-export default async function InboxPage() {
+const URGENCY_VALUES = new Set(['high', 'medium', 'low']);
+const LANGUAGE_VALUES = new Set(['ar', 'en', 'mixed']);
+const STATUS_VALUES = new Set(['pending', 'drafted', 'responded', 'ignored']);
+
+export default async function InboxPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { user } = await requireUser();
   const restaurant = await db.query.restaurants.findFirst({
     where: eq(restaurants.userId, user.id),
   });
   if (!restaurant) redirect('/onboarding');
 
+  const sp = await searchParams;
+  const urgency = typeof sp.urgency === 'string' && URGENCY_VALUES.has(sp.urgency) ? sp.urgency : null;
+  const sentiment = typeof sp.sentiment === 'string' ? sp.sentiment : null;
+  const language = typeof sp.language === 'string' && LANGUAGE_VALUES.has(sp.language) ? sp.language : null;
+  const status = typeof sp.status === 'string' && STATUS_VALUES.has(sp.status) ? sp.status : null;
+
+  const conditions: SQL[] = [eq(reviews.restaurantId, restaurant.id)];
+  if (urgency) conditions.push(sql`${reviews.urgency} = ${urgency}`);
+  if (language) conditions.push(sql`${reviews.language} = ${language}`);
+  if (status) conditions.push(sql`${reviews.status} = ${status}`);
+  if (sentiment === 'positive') conditions.push(gte(reviews.sentiment, 1));
+  if (sentiment === 'negative') conditions.push(lte(reviews.sentiment, -1));
+  if (sentiment === 'neutral') conditions.push(eq(reviews.sentiment, 0));
+
   const rows = await db
     .select()
     .from(reviews)
-    .where(eq(reviews.restaurantId, restaurant.id))
+    .where(and(...conditions))
     .orderBy(
       sql`CASE ${reviews.urgency} WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END`,
       desc(reviews.postedAt)
     );
+
+  const totalCount = await db.$count(reviews, eq(reviews.restaurantId, restaurant.id));
 
   return (
     <div>
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-ink-900">صندوق التقييمات</h1>
-          <p className="mt-1 text-sm text-ink-600">{rows.length} تقييم</p>
+          <p className="mt-1 text-sm text-ink-600">
+            {rows.length} من أصل {totalCount} تقييم
+          </p>
         </div>
         <Link
           href="/inbox/new"
@@ -38,6 +65,10 @@ export default async function InboxPage() {
         >
           + إضافة تقييم
         </Link>
+      </div>
+
+      <div className="mb-6 rounded-2xl border border-ink-100 bg-white p-4">
+        <InboxFilters />
       </div>
 
       {rows.length === 0 ? (

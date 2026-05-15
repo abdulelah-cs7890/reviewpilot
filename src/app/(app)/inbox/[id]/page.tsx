@@ -6,7 +6,8 @@ import { requireUser } from '@/lib/auth-utils';
 import { UrgencyBadge } from '@/components/inbox/UrgencyBadge';
 import { SentimentTag } from '@/components/inbox/SentimentTag';
 import { StatusBadge } from '@/components/inbox/StatusBadge';
-import { DraftEditor } from '@/components/inbox/DraftEditor';
+import { DraftSwitcher } from '@/components/inbox/DraftSwitcher';
+import { RegenerateButton } from '@/components/inbox/RegenerateButton';
 
 export default async function ReviewDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -22,13 +23,10 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
   });
   if (!review) notFound();
 
-  const draft = await db.query.drafts.findFirst({
+  const allDrafts = await db.query.drafts.findMany({
     where: eq(drafts.reviewId, review.id),
     orderBy: [desc(drafts.generatedAt)],
   });
-
-  const draftText = draft?.editedText ?? draft?.draftText ?? '';
-  const draftLanguage = draft?.language ?? review.language ?? 'ar';
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -66,23 +64,14 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
         )}
       </section>
 
-      {/* The draft */}
+      {/* The draft(s) */}
       <section className="rounded-3xl border border-accent/30 bg-accent/5 p-6 shadow-sm sm:p-8">
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-sm uppercase tracking-wider text-accent-dark">مسودة الرد</h2>
-          {draft && (
-            <span className="text-xs text-ink-500">
-              {draft.model} · {draft.promptVersion}
-            </span>
-          )}
+          <RegenerateButton reviewId={review.id} />
         </div>
-        {draft ? (
-          <DraftEditor
-            draftId={draft.id}
-            reviewId={review.id}
-            initialText={draftText}
-            language={draftLanguage}
-          />
+        {allDrafts.length > 0 ? (
+          <DraftSwitcher reviewId={review.id} drafts={allDrafts} />
         ) : (
           <p className="text-ink-600">لم يتم إنشاء مسودة بعد لهذا التقييم.</p>
         )}
