@@ -10,7 +10,10 @@
  * below. To swap providers, change ONE file.
  */
 
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, Type, type Schema } from '@google/genai';
+
+export { Type };
+export type ResponseSchema = Schema;
 
 if (!process.env.GEMINI_API_KEY) {
   throw new Error(
@@ -44,6 +47,9 @@ interface GenerateOptions {
   userPrompt: string;
   maxTokens?: number;
   temperature?: number;
+  // When set on a JSON call, Gemini enforces field names + types server-side.
+  // Stronger than responseMimeType alone — the model can't invent extra fields.
+  responseSchema?: ResponseSchema;
 }
 
 // Gemini free tier rate limits are tight (gemini-2.5-flash is 5 RPM).
@@ -84,7 +90,12 @@ async function callGemini(opts: GenerateOptions, asJSON: boolean): Promise<strin
           systemInstruction: opts.systemPrompt,
           maxOutputTokens: opts.maxTokens ?? 2048,
           temperature: opts.temperature ?? (asJSON ? 0.3 : 0.7),
-          ...(asJSON ? { responseMimeType: 'application/json' } : {}),
+          ...(asJSON
+            ? {
+                responseMimeType: 'application/json',
+                ...(opts.responseSchema ? { responseSchema: opts.responseSchema } : {}),
+              }
+            : {}),
         },
       });
       const text = response.text;

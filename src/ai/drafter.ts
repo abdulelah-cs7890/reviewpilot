@@ -1,5 +1,17 @@
-import { generateJSON, MODELS, PROMPT_VERSIONS } from './client';
+import { generateJSON, MODELS, PROMPT_VERSIONS, Type, type ResponseSchema } from './client';
 import type { ReviewAnalysis } from './analyzer';
+
+// Typed schema for the drafter's JSON output. Mirrors the parsed shape below.
+const draftSchema: ResponseSchema = {
+  type: Type.OBJECT,
+  properties: {
+    draftText: { type: Type.STRING },
+    language: { type: Type.STRING, enum: ['ar', 'en', 'mixed'] },
+    rationale: { type: Type.STRING, nullable: true },
+  },
+  required: ['draftText', 'language'],
+  propertyOrdering: ['draftText', 'language', 'rationale'],
+};
 
 export interface VoiceProfileInput {
   formality: 'formal' | 'casual' | 'warm';
@@ -58,12 +70,22 @@ const DRAFTER_SYSTEM_PROMPT = `You write Google review responses for a Saudi res
    - Never use الحمد لله in response to a negative review (sounds dismissive)
 
 9. **Forbidden phrases (overused, robotic, or culturally off):**
-   - "نأسف لسماع ذلك" (translated, stiff)
-   - "ملاحظاتكم القيمة" / "your valuable feedback" (corporate cliché)
-   - "نعتذر عن أي إزعاج" (vague)
+   English:
    - "We strive to provide the best..." (AI cliché)
    - "Thank you for taking the time to..." (AI cliché)
+   - "your valuable feedback" (corporate cliché)
+   - "We appreciate your patience" (vague, dismissive)
    - Long lists of what the restaurant offers (this is a response, not an ad)
+   Arabic — these are the Arabic equivalents of the English clichés, equally robotic:
+   - "نأسف لسماع ذلك" (translated, stiff — feels like Google Translate)
+   - "ملاحظاتكم القيمة" (corporate cliché)
+   - "نعتذر عن أي إزعاج" (vague — apologize for the SPECIFIC issue instead)
+   - "نسعى دائمًا لتقديم الأفضل" (Arabic of "We strive to provide the best" — robotic)
+   - "نتطلع لخدمتكم" (corporate, formulaic)
+   - "نضع رضاكم نصب أعيننا" (corporate, ad-copy)
+   - "يسرنا تواجدكم معنا" (formulaic)
+   - "نعتز بكلماتكم الطيبة" (formulaic)
+   - "في أقرب فرصة ممكنة" (vague — give specifics or omit)
 
 10. **Specificity over generality.** If the reviewer mentioned a dish, mention it back. If they mentioned a staff member, reference the team. If they mentioned a specific issue, address THAT issue.
 
@@ -151,6 +173,7 @@ Write the response now. Return the JSON only.`;
     userPrompt,
     maxTokens: 2048,
     temperature: 0.7,
+    responseSchema: draftSchema,
   });
 
   return {

@@ -1,4 +1,41 @@
-import { generateJSON, MODELS, PROMPT_VERSIONS } from './client';
+import { generateJSON, MODELS, PROMPT_VERSIONS, Type, type ResponseSchema } from './client';
+
+// Typed schema so Gemini enforces field names + types server-side. Mirrors
+// the ReviewAnalysis interface below.
+const analysisSchema: ResponseSchema = {
+  type: Type.OBJECT,
+  properties: {
+    language: { type: Type.STRING, enum: ['ar', 'en', 'mixed'] },
+    dialect: {
+      type: Type.STRING,
+      enum: ['gulf', 'msa', 'levantine', 'egyptian', 'other'],
+      nullable: true,
+    },
+    sentiment: { type: Type.INTEGER },
+    topics: { type: Type.ARRAY, items: { type: Type.STRING } },
+    urgency: { type: Type.STRING, enum: ['low', 'medium', 'high'] },
+    mentions: {
+      type: Type.OBJECT,
+      properties: {
+        dishes: { type: Type.ARRAY, items: { type: Type.STRING } },
+        issues: { type: Type.ARRAY, items: { type: Type.STRING } },
+        praise: { type: Type.ARRAY, items: { type: Type.STRING } },
+      },
+      propertyOrdering: ['dishes', 'issues', 'praise'],
+    },
+    ownerSummary: { type: Type.STRING },
+  },
+  required: ['language', 'sentiment', 'topics', 'urgency', 'mentions', 'ownerSummary'],
+  propertyOrdering: [
+    'language',
+    'dialect',
+    'sentiment',
+    'topics',
+    'urgency',
+    'mentions',
+    'ownerSummary',
+  ],
+};
 
 export type ReviewLanguage = 'ar' | 'en' | 'mixed';
 export type Urgency = 'low' | 'medium' | 'high';
@@ -95,6 +132,7 @@ Return the JSON analysis.`;
     userPrompt,
     maxTokens: 1024,
     temperature: 0.2,
+    responseSchema: analysisSchema,
   });
 }
 

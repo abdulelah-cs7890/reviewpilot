@@ -41,16 +41,87 @@ const profiles: Record<string, VoiceProfileInput> = {
     formality: 'formal',
     useReligiousPhrases: false,
     arabicDialect: 'msa',
+    customInstructions: 'Upscale fine-dining establishment. Owner replies in measured formal Arabic. Professional, restrained, never colloquial.',
     signoff: 'إدارة المطعم',
-    sampleResponses: null,
+    sampleResponses: [
+      {
+        reviewText: 'تجربة راقية وطعام متميز، خاصة طبق المنسف.',
+        rating: 5,
+        responseText:
+          'نشكركم على كلماتكم الكريمة. يسعدنا أن طبق المنسف نال إعجابكم، ونتطلع لاستقبالكم في زيارات قادمة.',
+        language: 'ar',
+      },
+      {
+        reviewText: 'المطعم جيد لكن مدة الانتظار كانت طويلة في وقت الذروة.',
+        rating: 4,
+        responseText:
+          'نقدّر ملاحظتكم بشأن مدة الانتظار في أوقات الذروة، وسنعمل على تحسين سرعة الخدمة. نتطلع لزيارتكم القادمة.',
+        language: 'ar',
+      },
+      {
+        reviewText: 'الطعام لم يكن بالمستوى المتوقع، خاصة جودة اللحم.',
+        rating: 2,
+        responseText:
+          'نعتذر عن تجربتكم، فجودة اللحم تمثل أولوية لنا. نودّ التواصل معكم لفهم التفاصيل ومعالجة الأمر مباشرة؛ يرجى الاتصال على 0500000000.',
+        language: 'ar',
+      },
+      {
+        reviewText: 'خدمة سيئة من أحد الموظفين، وقلة احترام.',
+        rating: 1,
+        responseText:
+          'ما وصفتموه لا يمثل معاييرنا، ونتحمل المسؤولية الكاملة. نرجو التواصل معنا على 0500000000 لمعالجة الموقف بشكل شخصي ومحاسبة من تسبب فيه.',
+        language: 'ar',
+      },
+      {
+        reviewText: 'Excellent ambiance and the service was attentive throughout the evening.',
+        rating: 5,
+        responseText:
+          "Thank you for your kind words. We're pleased that the ambiance and service met your expectations, and we look forward to welcoming you again.",
+        language: 'en',
+      },
+    ],
   },
   casual: {
     formality: 'casual',
     useReligiousPhrases: true,
     arabicDialect: 'gulf',
-    customInstructions: 'Young trendy spot in Boulevard, owner is hands-on, casual vibe.',
+    customInstructions: 'Young trendy spot in Boulevard, owner is hands-on, casual vibe. Replies are short and natural, no corporate tone.',
     signoff: null,
-    sampleResponses: null,
+    sampleResponses: [
+      {
+        reviewText: 'الجو والأكل خرافي صدق',
+        rating: 5,
+        responseText: 'والله يا هلا فيك، كلامك يحمسنا أكثر. تعال ثاني وقت ونرتب لك تجربة أحلى.',
+        language: 'ar',
+      },
+      {
+        reviewText: 'خدمة سيئة جداً، طلبت ارجاع وما رد علي',
+        rating: 1,
+        responseText:
+          'والله مو من شيمنا هالشي. كلمنا واتساب 0500000000 وراح نسوي اللي يخليك ترجع راضي.',
+        language: 'ar',
+      },
+      {
+        reviewText: 'Vibes are amazing, food was solid, will be back!',
+        rating: 4,
+        responseText:
+          "Glad you vibed with the spot! Come through again and try the new menu — we'd love to know what you think.",
+        language: 'en',
+      },
+      {
+        reviewText: 'Honestly the burger was fire 🔥 bas الموسيقى عالية وايد',
+        rating: 4,
+        responseText:
+          'Thanks، فرحنا إنك حبيت البرقر. بنخفض الموسيقى شوي مرة الجاية for sure، تعال جرب بقية المنيو.',
+        language: 'mixed',
+      },
+      {
+        reviewText: 'تمام صراحة',
+        rating: 5,
+        responseText: 'تسلم! نشوفك قريب إن شاء الله.',
+        language: 'ar',
+      },
+    ],
   },
 };
 
