@@ -70,6 +70,7 @@ export async function createManualReview(
         sentiment: analysis.sentiment,
         topics: analysis.topics,
         urgency: analysis.urgency,
+        severity: analysis.severity,
         status: 'drafted',
       })
       .where(eq(reviews.id, review.id));

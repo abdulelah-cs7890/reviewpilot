@@ -8,6 +8,7 @@ import { appCopy } from '@/lib/app-copy';
 import { UrgencyBadge } from '@/components/inbox/UrgencyBadge';
 import { SentimentTag } from '@/components/inbox/SentimentTag';
 import { StatusBadge } from '@/components/inbox/StatusBadge';
+import { SeverityBadge } from '@/components/inbox/SeverityBadge';
 import { InboxFilters } from '@/components/inbox/InboxFilters';
 import { WelcomeBanner } from '@/components/inbox/WelcomeBanner';
 import { StarRating } from '@/components/inbox/StarRating';
@@ -18,6 +19,7 @@ const SNIPPET_LEN = 140;
 const URGENCY_VALUES = new Set(['high', 'medium', 'low']);
 const LANGUAGE_VALUES = new Set(['ar', 'en', 'mixed']);
 const STATUS_VALUES = new Set(['pending', 'drafted', 'responded', 'ignored']);
+const SEVERITY_VALUES = new Set(['urgent_action', 'direct_reply', 'monitor', 'spam']);
 
 export default async function InboxPage({
   searchParams,
@@ -38,11 +40,13 @@ export default async function InboxPage({
   const sentiment = typeof sp.sentiment === 'string' ? sp.sentiment : null;
   const language = typeof sp.language === 'string' && LANGUAGE_VALUES.has(sp.language) ? sp.language : null;
   const status = typeof sp.status === 'string' && STATUS_VALUES.has(sp.status) ? sp.status : null;
+  const severity = typeof sp.severity === 'string' && SEVERITY_VALUES.has(sp.severity) ? sp.severity : null;
 
   const conditions: SQL[] = [eq(reviews.restaurantId, restaurant.id)];
   if (urgency) conditions.push(sql`${reviews.urgency} = ${urgency}`);
   if (language) conditions.push(sql`${reviews.language} = ${language}`);
   if (status) conditions.push(sql`${reviews.status} = ${status}`);
+  if (severity) conditions.push(sql`${reviews.severity} = ${severity}`);
   if (sentiment === 'positive') conditions.push(gte(reviews.sentiment, 1));
   if (sentiment === 'negative') conditions.push(lte(reviews.sentiment, -1));
   if (sentiment === 'neutral') conditions.push(eq(reviews.sentiment, 0));
@@ -141,6 +145,7 @@ export default async function InboxPage({
                       )}
                       <StarRating rating={r.rating} />
                       <UrgencyBadge urgency={r.urgency} locale={locale} />
+                      <SeverityBadge severity={r.severity} locale={locale} />
                       <SentimentTag sentiment={r.sentiment} locale={locale} />
                       <StatusBadge status={r.status} locale={locale} />
                     </div>

@@ -67,6 +67,11 @@ Suggested flow to capture:
 | **Learn-from-edits** | When you edit an AI draft and save, your edits become few-shot examples for the next draft. The AI literally adopts your voice with use — no fine-tuning. |
 | **Customer timeline** | Click any author's name in the inbox → see all their reviews and your replies across time, with stats (visit count, avg rating, days since last visit) |
 | **Bulk paste** | Paste many reviews at once, separated by `---` blocks. Each gets analyzed + drafted sequentially with per-entry progress and quota-aware stopping. |
+| **Severity classifier** | Second classifier dimension beyond urgency: `urgent_action` / `direct_reply` / `monitor` / `spam`. Lets the inbox split "respond on Google" vs "call the customer offline" vs "ignore". |
+| **Topic trends** | Dashboard tile: top 5 topics by 7-day-vs-28-day-baseline delta with up/down/new indicators. A spike in hygiene complaints lights up red. |
+| **Schedule-for-later** | Owner picks a future publish time on the detail page; Vercel cron flips the status when the time hits. Real GBP-posting is deferred. |
+| **Auto-tune voice profile** | "Suggest profile changes" button on /settings: AI reads recent edits + current profile and proposes per-field changes ("lower formality" / "add custom rule: name the chef") with rationale + confidence. Owner applies or skips per-field. |
+| **Reply policy generator** | `/insights` page: meta-AI reads 20 review→reply pairs and extracts the implicit policies you follow ("For 1-2★ delivery: apologize specifically + offer WhatsApp"). Save any policy to your voice profile to lock it into future drafts. |
 
 ## Architecture
 

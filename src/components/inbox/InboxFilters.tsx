@@ -3,13 +3,14 @@
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useTransition } from 'react';
 
-type GroupKey = 'urgency' | 'sentiment' | 'language' | 'status';
+type GroupKey = 'urgency' | 'sentiment' | 'language' | 'status' | 'severity';
 
 interface FiltersCopy {
   urgency: string;
   sentiment: string;
   language: string;
   status: string;
+  severity: string;
   clear: string;
   urgent: string;
   important: string;
@@ -23,6 +24,10 @@ interface FiltersCopy {
   pending: string;
   drafted: string;
   responded: string;
+  sevUrgentAction: string;
+  sevDirectReply: string;
+  sevMonitor: string;
+  sevSpam: string;
 }
 
 export function InboxFilters({ t }: { t: FiltersCopy }) {
@@ -70,6 +75,16 @@ export function InboxFilters({ t }: { t: FiltersCopy }) {
         { value: 'pending', label: t.pending },
         { value: 'drafted', label: t.drafted },
         { value: 'responded', label: t.responded },
+      ],
+    },
+    {
+      key: 'severity',
+      label: t.severity,
+      options: [
+        { value: 'urgent_action', label: t.sevUrgentAction },
+        { value: 'direct_reply', label: t.sevDirectReply },
+        { value: 'monitor', label: t.sevMonitor },
+        { value: 'spam', label: t.sevSpam },
       ],
     },
   ];

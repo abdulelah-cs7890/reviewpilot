@@ -102,6 +102,7 @@ export async function POST(req: NextRequest) {
             sentiment: analysis.sentiment,
             topics: analysis.topics,
             urgency: analysis.urgency,
+            severity: analysis.severity,
             status: 'drafted',
           })
           .where(eq(reviews.id, review.id));

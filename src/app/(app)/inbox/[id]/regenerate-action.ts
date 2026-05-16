@@ -63,6 +63,7 @@ export async function regenerateDraft(reviewId: string): Promise<RegenerateResul
     sentiment: (r.sentiment ?? 0) as ReviewAnalysis['sentiment'],
     topics: r.topics ?? [],
     urgency: r.urgency ?? 'low',
+    severity: r.severity ?? 'direct_reply',
     mentions: {},
     ownerSummary: '',
   };

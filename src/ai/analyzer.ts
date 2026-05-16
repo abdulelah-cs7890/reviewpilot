@@ -14,6 +14,10 @@ const analysisSchema: ResponseSchema = {
     sentiment: { type: Type.INTEGER },
     topics: { type: Type.ARRAY, items: { type: Type.STRING } },
     urgency: { type: Type.STRING, enum: ['low', 'medium', 'high'] },
+    severity: {
+      type: Type.STRING,
+      enum: ['urgent_action', 'direct_reply', 'monitor', 'spam'],
+    },
     mentions: {
       type: Type.OBJECT,
       properties: {
@@ -25,13 +29,14 @@ const analysisSchema: ResponseSchema = {
     },
     ownerSummary: { type: Type.STRING },
   },
-  required: ['language', 'sentiment', 'topics', 'urgency', 'mentions', 'ownerSummary'],
+  required: ['language', 'sentiment', 'topics', 'urgency', 'severity', 'mentions', 'ownerSummary'],
   propertyOrdering: [
     'language',
     'dialect',
     'sentiment',
     'topics',
     'urgency',
+    'severity',
     'mentions',
     'ownerSummary',
   ],
@@ -39,6 +44,7 @@ const analysisSchema: ResponseSchema = {
 
 export type ReviewLanguage = 'ar' | 'en' | 'mixed';
 export type Urgency = 'low' | 'medium' | 'high';
+export type Severity = 'urgent_action' | 'direct_reply' | 'monitor' | 'spam';
 
 export interface ReviewAnalysis {
   language: ReviewLanguage;
@@ -46,6 +52,7 @@ export interface ReviewAnalysis {
   sentiment: -2 | -1 | 0 | 1 | 2;
   topics: string[];
   urgency: Urgency;
+  severity: Severity;
   mentions: {
     dishes?: string[];
     issues?: string[];
@@ -91,6 +98,21 @@ Urgency rules:
 - "medium": rating ≤ 2 without urgent flags, OR a 3-star with serious specific complaints
 - "low": 4-5 star reviews, or 3-star without serious issues
 
+Severity classifies WHAT KIND of attention is needed (independent from urgency):
+- "urgent_action": the customer needs OFFLINE action beyond a public reply.
+  Triggers: allergen reaction, food-poisoning illness, hair / insect / foreign object in food,
+  harassment or discrimination by staff, threat to escalate to regulator (هيئة الغذاء، vendor authority),
+  threat to call legal counsel, mention of medical or emergency-services involvement.
+  Often (but not always) coincides with urgency=high.
+- "direct_reply": standard case — a public reply on Google suffices. Default for most reviews.
+- "monitor": vague, low-signal text ("not good", "okay", short ambiguous), or a pattern-y
+  complaint about a topic that's been raised before. Worth a brief reply, but mostly observation value.
+- "spam": obvious troll, competitor smear, off-topic, or auto-generated. Owner should consider
+  flagging on Google instead of responding.
+
+Pick exactly ONE severity. When unsure between urgent_action and direct_reply, prefer urgent_action
+for any review with safety / legal / discrimination concerns.
+
 Extract specific mentions:
 - dishes: actual menu items named (e.g. "كبسة", "shawarma", "مندي")
 - issues: concrete problems mentioned (e.g. "cold food", "rude waiter")
@@ -105,6 +127,7 @@ Return ONLY this JSON shape (no markdown, no commentary):
   "sentiment": -2 | -1 | 0 | 1 | 2,
   "topics": string[],
   "urgency": "low" | "medium" | "high",
+  "severity": "urgent_action" | "direct_reply" | "monitor" | "spam",
   "mentions": {
     "dishes": string[],
     "issues": string[],

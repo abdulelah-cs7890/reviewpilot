@@ -172,6 +172,7 @@ const REVIEWS_SEED = [
     sentiment: -2,
     topics: ['food_quality', 'hygiene', 'service_attitude'],
     urgency: 'high' as const,
+    severity: 'urgent_action' as const,
     daysAgo: 1,
     draftText:
       'نعتذر منك بشدة على اللي صار بخصوص الشعر في الأكل، وهالشيء أبداً ما نقبله ولا يمثلنا. كلام المدير هذا غير مقبول إطلاقاً، وبنتصرف معه فوراً. نتمنى تتواصل معنا على واتساب 0500000000 عشان نعوضك ونوضح لك الموضوع. إدارة المطعم',
@@ -330,6 +331,9 @@ async function main() {
         sentiment: r.sentiment,
         topics: r.topics,
         urgency: r.urgency,
+        // Default to direct_reply; entries that want a different severity
+        // (urgent_action / monitor / spam) override via the explicit field.
+        severity: 'severity' in r ? r.severity : 'direct_reply',
         status: 'drafted',
       })
       .returning();

@@ -9,6 +9,7 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { SentimentChart } from '@/components/dashboard/SentimentChart';
 import { TopicHeatmap } from '@/components/dashboard/TopicHeatmap';
 import { UrgencySplit } from '@/components/dashboard/UrgencySplit';
+import { TopicTrendsCard } from '@/components/dashboard/TopicTrendsCard';
 
 const TRACKED_TOPICS = [
   'food_quality',
@@ -148,6 +149,11 @@ export default async function DashboardPage() {
         <p className="mb-4 text-xs text-ink-500">{t.sentimentSub}</p>
         <SentimentChart points={sentimentPoints} days={DAYS} />
       </section>
+
+      {/* Topic trends */}
+      <div className="mb-6">
+        <TopicTrendsCard reviews={all} locale={locale} />
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Topic heatmap */}

@@ -9,6 +9,7 @@ import { appCopy } from '@/lib/app-copy';
 import { getOwnerEditExamples } from '@/ai/owner-edits';
 import { SettingsForm } from '@/components/settings/SettingsForm';
 import { defaultsFromRow } from '@/components/voice-profile/VoiceProfileFields';
+import { ProfileTunerPanel } from '@/components/settings/ProfileTunerPanel';
 
 export default async function SettingsPage() {
   const { user } = await requireUser();
@@ -62,6 +63,9 @@ export default async function SettingsPage() {
       <div className="rounded-3xl border border-ink-100 bg-white p-6 shadow-sm sm:p-8">
         <SettingsForm defaults={defaultsFromRow(profile)} locale={locale} />
       </div>
+
+      {/* Auto-tune voice profile panel */}
+      <ProfileTunerPanel locale={locale} />
 
       {/* Learn-from-edits panel */}
       <div className="mt-6 rounded-3xl border border-ink-100 bg-white p-6 shadow-sm sm:p-8">

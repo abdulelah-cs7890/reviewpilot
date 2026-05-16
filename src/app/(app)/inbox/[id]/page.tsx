@@ -8,11 +8,13 @@ import { appCopy } from '@/lib/app-copy';
 import { UrgencyBadge } from '@/components/inbox/UrgencyBadge';
 import { SentimentTag } from '@/components/inbox/SentimentTag';
 import { StatusBadge } from '@/components/inbox/StatusBadge';
+import { SeverityBadge } from '@/components/inbox/SeverityBadge';
 import { DraftSwitcher } from '@/components/inbox/DraftSwitcher';
 import { RegenerateButton } from '@/components/inbox/RegenerateButton';
 import { StarRating } from '@/components/inbox/StarRating';
 import { AiDraftedBadge } from '@/components/AiDraftedBadge';
 import { ImproveDraftInput } from '@/components/inbox/ImproveDraftInput';
+import { ScheduleSendButton } from '@/components/inbox/ScheduleSendButton';
 import { customerHref } from '@/lib/customer-name';
 
 export default async function ReviewDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -59,6 +61,7 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
           )}
           <StarRating rating={review.rating} size={18} />
           <UrgencyBadge urgency={review.urgency} locale={locale} />
+          <SeverityBadge severity={review.severity} locale={locale} />
           <SentimentTag sentiment={review.sentiment} locale={locale} />
           <StatusBadge status={review.status} locale={locale} />
         </div>
@@ -100,6 +103,13 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
         {allDrafts.length > 0 ? (
           <>
             <DraftSwitcher reviewId={review.id} drafts={allDrafts} locale={locale} />
+            <div className="mt-3">
+              <ScheduleSendButton
+                draftId={allDrafts[0].id}
+                scheduledFor={allDrafts[0].scheduledFor}
+                locale={locale}
+              />
+            </div>
             <ImproveDraftInput reviewId={review.id} locale={locale} />
           </>
         ) : (

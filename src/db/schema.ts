@@ -18,6 +18,12 @@ export const reviewSourceEnum = pgEnum('review_source', ['google', 'manual', 'im
 export const reviewStatusEnum = pgEnum('review_status', ['pending', 'drafted', 'responded', 'ignored']);
 export const reviewLanguageEnum = pgEnum('review_language', ['ar', 'en', 'mixed']);
 export const urgencyEnum = pgEnum('urgency', ['low', 'medium', 'high']);
+export const severityEnum = pgEnum('severity', [
+  'urgent_action',
+  'direct_reply',
+  'monitor',
+  'spam',
+]);
 export const formalityEnum = pgEnum('formality', ['formal', 'casual', 'warm']);
 export const arabicDialectEnum = pgEnum('arabic_dialect', ['msa', 'gulf', 'mixed']);
 
@@ -161,6 +167,7 @@ export const reviews = pgTable(
     sentiment: integer('sentiment'),
     topics: jsonb('topics').$type<string[]>(),
     urgency: urgencyEnum('urgency'),
+    severity: severityEnum('severity'),
     status: reviewStatusEnum('status').notNull().default('pending'),
   },
   (t) => ({
@@ -200,6 +207,9 @@ export const drafts = pgTable(
     // Meta-grading from src/ai/quality.ts. Null if the check failed (best-effort)
     // or if the draft predates Phase 4 — UI hides the card in both cases.
     qualityCheck: jsonb('quality_check').$type<QualityCheckResult>(),
+    // When set, the publish-scheduled cron flips this draft + parent review
+    // to 'responded' once now() >= scheduledFor.
+    scheduledFor: timestamp('scheduled_for'),
   },
   (t) => ({
     reviewIdx: index('drafts_review_idx').on(t.reviewId),

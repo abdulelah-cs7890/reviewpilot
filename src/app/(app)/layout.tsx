@@ -50,6 +50,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                   <Link href="/dashboard" className="text-ink-600 hover:text-ink-900">
                     {t.nav.dashboard}
                   </Link>
+                  <Link href="/insights" className="text-ink-600 hover:text-ink-900">
+                    {locale === 'en' ? 'Insights' : 'تحليلات'}
+                  </Link>
                   <Link href="/settings" className="text-ink-600 hover:text-ink-900">
                     {t.nav.settings}
                   </Link>
