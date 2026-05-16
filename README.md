@@ -10,7 +10,7 @@ Reviews come in Arabic (Gulf or MSA), English, or code-switched. ReviewPilot rea
 
 ## ➡️ Try the live demo
 
-**[reviewpilot.vercel.app](https://reviewpilot.vercel.app)** — click "جرّب العرض التجريبي" / "Try the live demo" on the landing hero. **One click, no signup.** You'll land in a pre-seeded restaurant with 8 real-feel reviews already analyzed and draft replies ready to copy.
+**[reviewpilot-drab-two.vercel.app](https://reviewpilot-drab-two.vercel.app)** — click "جرّب العرض التجريبي" / "Try the live demo" on the landing hero. **One click, no signup.** You'll land in a pre-seeded restaurant with 8 real-feel reviews already analyzed and draft replies ready to copy.
 
 <!--
 Demo video slot — record a 30–60s walkthrough and drop it here.
