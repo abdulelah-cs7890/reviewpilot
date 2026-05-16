@@ -16,18 +16,45 @@ export interface VoiceProfileDefaults {
   signoff?: string | null;
 }
 
-export function VoiceProfileFields({ defaults }: { defaults?: VoiceProfileDefaults }) {
+export function VoiceProfileFields({
+  defaults,
+  locale = 'ar',
+}: {
+  defaults?: VoiceProfileDefaults;
+  locale?: 'ar' | 'en';
+}) {
   const formality = defaults?.formality ?? 'warm';
   const dialect = defaults?.arabicDialect ?? 'gulf';
   const religious = defaults?.useReligiousPhrases ?? true;
   const signoff = defaults?.signoff ?? 'إدارة المطعم';
 
+  const t =
+    locale === 'en'
+      ? {
+          heading: 'Reply voice',
+          formalityLabel: 'Reply tone',
+          formality: { warm: 'Warm', formal: 'Formal', casual: 'Casual' },
+          dialectLabel: 'Preferred Arabic dialect',
+          dialect: { gulf: 'Gulf', msa: 'MSA', mixed: 'Mixed' },
+          religious: 'Use religious phrases (الله يعطيك العافية, إن شاء الله...)',
+          signoffLabel: 'Reply signoff (optional)',
+        }
+      : {
+          heading: 'نغمة الردود',
+          formalityLabel: 'طبيعة الردود',
+          formality: { warm: 'ودودة', formal: 'رسمية', casual: 'عفوية' },
+          dialectLabel: 'اللهجة العربية المفضلة',
+          dialect: { gulf: 'خليجية', msa: 'فصحى', mixed: 'مختلطة' },
+          religious: 'استخدام عبارات دينية (الله يعطيك العافية، إن شاء الله...)',
+          signoffLabel: 'توقيع الردود (اختياري)',
+        };
+
   return (
     <section className="space-y-3">
-      <h2 className="text-sm font-medium text-ink-900">نغمة الردود</h2>
+      <h2 className="text-sm font-medium text-ink-900">{t.heading}</h2>
 
       <div>
-        <span className="mb-2 block text-sm text-ink-700">طبيعة الردود</span>
+        <span className="mb-2 block text-sm text-ink-700">{t.formalityLabel}</span>
         <div className="flex gap-2">
           {(['warm', 'formal', 'casual'] as const).map((v) => (
             <label
@@ -41,14 +68,14 @@ export function VoiceProfileFields({ defaults }: { defaults?: VoiceProfileDefaul
                 defaultChecked={v === formality}
                 className="sr-only"
               />
-              {v === 'warm' ? 'ودودة' : v === 'formal' ? 'رسمية' : 'عفوية'}
+              {t.formality[v]}
             </label>
           ))}
         </div>
       </div>
 
       <div>
-        <span className="mb-2 block text-sm text-ink-700">اللهجة العربية المفضلة</span>
+        <span className="mb-2 block text-sm text-ink-700">{t.dialectLabel}</span>
         <div className="flex gap-2">
           {(['gulf', 'msa', 'mixed'] as const).map((v) => (
             <label
@@ -62,7 +89,7 @@ export function VoiceProfileFields({ defaults }: { defaults?: VoiceProfileDefaul
                 defaultChecked={v === dialect}
                 className="sr-only"
               />
-              {v === 'gulf' ? 'خليجية' : v === 'msa' ? 'فصحى' : 'مختلطة'}
+              {t.dialect[v]}
             </label>
           ))}
         </div>
@@ -75,12 +102,12 @@ export function VoiceProfileFields({ defaults }: { defaults?: VoiceProfileDefaul
           defaultChecked={religious}
           className="h-4 w-4 rounded border-ink-300"
         />
-        استخدام عبارات دينية (الله يعطيك العافية، إن شاء الله...)
+        {t.religious}
       </label>
 
       <div>
         <label htmlFor="signoff" className="mb-1 block text-sm text-ink-700">
-          توقيع الردود (اختياري)
+          {t.signoffLabel}
         </label>
         <input
           id="signoff"

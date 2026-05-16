@@ -2,25 +2,36 @@
  * Horizontal bar chart of review counts by urgency level.
  * Server-rendered SVG.
  */
+import type { UiLocale } from '@/lib/locale';
 
 export function UrgencySplit({
   high,
   medium,
   low,
+  locale = 'ar',
 }: {
   high: number;
   medium: number;
   low: number;
+  locale?: UiLocale;
 }) {
   const total = high + medium + low;
   if (total === 0) {
-    return <p className="text-sm text-ink-500">لا توجد بيانات.</p>;
+    return (
+      <p className="text-sm text-ink-500">
+        {locale === 'en' ? 'No data.' : 'لا توجد بيانات.'}
+      </p>
+    );
   }
   const max = Math.max(high, medium, low, 1);
+  const labels =
+    locale === 'en'
+      ? { high: 'Urgent', medium: 'Important', low: 'Normal' }
+      : { high: 'عاجل', medium: 'مهم', low: 'عادي' };
   const rows = [
-    { key: 'high', label: 'عاجل', value: high, color: '#dc2626' },
-    { key: 'medium', label: 'مهم', value: medium, color: '#d97706' },
-    { key: 'low', label: 'عادي', value: low, color: '#a8a597' },
+    { key: 'high', label: labels.high, value: high, color: '#dc2626' },
+    { key: 'medium', label: labels.medium, value: medium, color: '#d97706' },
+    { key: 'low', label: labels.low, value: low, color: '#a8a597' },
   ];
 
   return (

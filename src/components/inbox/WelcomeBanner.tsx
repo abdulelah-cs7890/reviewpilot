@@ -5,12 +5,29 @@ import { Sparkles, X } from 'lucide-react';
 
 const DISMISS_KEY = 'reviewpilot_demo_intro_seen';
 
+interface BannerCopy {
+  title: string;
+  sub: string;
+  bullet1Prefix: string;
+  bullet1Action: string;
+  bullet1Suffix: string;
+  bullet2Prefix: string;
+  bullet2Pre: string;
+  bullet2Action: string;
+  bullet2Suffix: string;
+  bullet3Prefix: string;
+  bullet3Pre: string;
+  bullet3Action: string;
+  bullet3Suffix: string;
+  dismiss: string;
+}
+
 /**
  * One-time welcome banner for demo-mode visitors. Orients them on what's
  * pre-loaded and what's worth clicking. Dismissed state persists in
  * localStorage; hidden entirely for non-demo users.
  */
-export function WelcomeBanner({ isDemo }: { isDemo: boolean }) {
+export function WelcomeBanner({ isDemo, t }: { isDemo: boolean; t: BannerCopy }) {
   const [visible, setVisible] = useState(false);
 
   // Hydration-safe: read localStorage after mount, otherwise SSR mismatches.
@@ -36,20 +53,21 @@ export function WelcomeBanner({ isDemo }: { isDemo: boolean }) {
           </div>
           <div>
             <h2 className="mb-1 text-base font-semibold tracking-tight text-ink-900">
-              أهلاً بك في النسخة التجريبية
+              {t.title}
             </h2>
-            <p className="mb-3 text-sm text-ink-700">
-              هذا مطعم تجريبي محمّل مسبقاً بـ ٨ تقييمات حقيقية. كل التقييمات هنا محلّلة بالذكاء الاصطناعي ولها مسودات ردود جاهزة. جرّب:
-            </p>
+            <p className="mb-3 text-sm text-ink-700">{t.sub}</p>
             <ul className="space-y-1.5 text-sm text-ink-700">
               <li>
-                ←&nbsp; <span className="text-ink-900">اضغط أي تقييم</span> لتشوف الرد المقترح + تقييم جودته
+                {t.bullet1Prefix}&nbsp;{' '}
+                <span className="text-ink-900">{t.bullet1Action}</span> {t.bullet1Suffix}
               </li>
               <li>
-                ←&nbsp; جرّب زر <span className="text-ink-900">«اقترح صياغة أخرى»</span> داخل تفاصيل التقييم
+                {t.bullet2Prefix}&nbsp; {t.bullet2Pre}{' '}
+                <span className="text-ink-900">{t.bullet2Action}</span> {t.bullet2Suffix}
               </li>
               <li>
-                ←&nbsp; شوف <span className="text-ink-900">لوحة المعلومات</span> فوق — رسوم بيانات حقيقية
+                {t.bullet3Prefix}&nbsp; {t.bullet3Pre}{' '}
+                <span className="text-ink-900">{t.bullet3Action}</span> {t.bullet3Suffix}
               </li>
             </ul>
           </div>
@@ -57,7 +75,7 @@ export function WelcomeBanner({ isDemo }: { isDemo: boolean }) {
         <button
           type="button"
           onClick={dismiss}
-          aria-label="إخفاء"
+          aria-label={t.dismiss}
           className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink-500 hover:bg-ink-100 hover:text-ink-900"
         >
           <X className="h-4 w-4" />

@@ -3,22 +3,43 @@
  * Server-rendered SVG, no client JS.
  */
 
-const TOPIC_LABELS: Record<string, string> = {
-  food_quality: 'جودة الطعام',
-  food_taste: 'الطعم',
-  food_temperature: 'حرارة الطعام',
-  portion_size: 'الكمية',
-  service_speed: 'سرعة الخدمة',
-  service_attitude: 'تعامل الموظفين',
-  staff_friendliness: 'لطف الطاقم',
-  wait_time: 'الانتظار',
-  cleanliness: 'النظافة',
-  hygiene: 'الصحة',
-  ambiance: 'الأجواء',
-  price_value: 'السعر/القيمة',
-  parking: 'المواقف',
-  delivery: 'التوصيل',
-  packaging: 'التغليف',
+import type { UiLocale } from '@/lib/locale';
+
+const TOPIC_LABELS: Record<UiLocale, Record<string, string>> = {
+  ar: {
+    food_quality: 'جودة الطعام',
+    food_taste: 'الطعم',
+    food_temperature: 'حرارة الطعام',
+    portion_size: 'الكمية',
+    service_speed: 'سرعة الخدمة',
+    service_attitude: 'تعامل الموظفين',
+    staff_friendliness: 'لطف الطاقم',
+    wait_time: 'الانتظار',
+    cleanliness: 'النظافة',
+    hygiene: 'الصحة',
+    ambiance: 'الأجواء',
+    price_value: 'السعر/القيمة',
+    parking: 'المواقف',
+    delivery: 'التوصيل',
+    packaging: 'التغليف',
+  },
+  en: {
+    food_quality: 'Food quality',
+    food_taste: 'Taste',
+    food_temperature: 'Food temp',
+    portion_size: 'Portion',
+    service_speed: 'Service speed',
+    service_attitude: 'Staff attitude',
+    staff_friendliness: 'Friendliness',
+    wait_time: 'Wait time',
+    cleanliness: 'Cleanliness',
+    hygiene: 'Hygiene',
+    ambiance: 'Ambiance',
+    price_value: 'Price/value',
+    parking: 'Parking',
+    delivery: 'Delivery',
+    packaging: 'Packaging',
+  },
 };
 
 const BUCKETS = [
@@ -33,14 +54,21 @@ type BucketKey = (typeof BUCKETS)[number]['key'];
 
 export function TopicHeatmap({
   data,
+  locale = 'ar',
 }: {
   data: Record<string, Record<BucketKey, number>>;
+  locale?: UiLocale;
 }) {
+  const labels = TOPIC_LABELS[locale];
   const topics = Object.keys(data).filter((t) =>
     Object.values(data[t]).some((v) => v > 0)
   );
   if (topics.length === 0) {
-    return <p className="text-sm text-ink-500">لا توجد بيانات كافية بعد.</p>;
+    return (
+      <p className="text-sm text-ink-500">
+        {locale === 'en' ? 'Not enough data yet.' : 'لا توجد بيانات كافية بعد.'}
+      </p>
+    );
   }
   const maxVal = Math.max(
     1,
@@ -60,6 +88,7 @@ export function TopicHeatmap({
       preserveAspectRatio="xMidYMid meet"
       role="img"
       aria-label="خريطة الموضوعات والمشاعر"
+      direction="ltr"
       className="block h-auto w-full"
     >
       {/* Column headers (sentiment buckets) */}
@@ -86,7 +115,7 @@ export function TopicHeatmap({
             fontSize="11"
             fill="#54513f"
           >
-            {TOPIC_LABELS[topic] ?? topic}
+            {labels[topic] ?? topic}
           </text>
           {BUCKETS.map((b, colIdx) => {
             const v = data[topic][b.key] ?? 0;

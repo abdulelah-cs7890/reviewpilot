@@ -3,56 +3,76 @@
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useTransition } from 'react';
 
-type Group = {
-  key: 'urgency' | 'sentiment' | 'language' | 'status';
-  label: string;
-  options: Array<{ value: string; label: string }>;
-};
+type GroupKey = 'urgency' | 'sentiment' | 'language' | 'status';
 
-const groups: Group[] = [
-  {
-    key: 'urgency',
-    label: 'الإلحاح',
-    options: [
-      { value: 'high', label: 'عاجل' },
-      { value: 'medium', label: 'مهم' },
-      { value: 'low', label: 'عادي' },
-    ],
-  },
-  {
-    key: 'sentiment',
-    label: 'المشاعر',
-    options: [
-      { value: 'positive', label: 'إيجابي' },
-      { value: 'neutral', label: 'محايد' },
-      { value: 'negative', label: 'سلبي' },
-    ],
-  },
-  {
-    key: 'language',
-    label: 'اللغة',
-    options: [
-      { value: 'ar', label: 'عربي' },
-      { value: 'en', label: 'English' },
-      { value: 'mixed', label: 'مختلط' },
-    ],
-  },
-  {
-    key: 'status',
-    label: 'الحالة',
-    options: [
-      { value: 'pending', label: 'بانتظار' },
-      { value: 'drafted', label: 'بمسودة' },
-      { value: 'responded', label: 'تم الرد' },
-    ],
-  },
-];
+interface FiltersCopy {
+  urgency: string;
+  sentiment: string;
+  language: string;
+  status: string;
+  clear: string;
+  urgent: string;
+  important: string;
+  normal: string;
+  positive: string;
+  neutral: string;
+  negative: string;
+  arabic: string;
+  english: string;
+  mixed: string;
+  pending: string;
+  drafted: string;
+  responded: string;
+}
 
-export function InboxFilters() {
+export function InboxFilters({ t }: { t: FiltersCopy }) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
   const [pending, startTransition] = useTransition();
+
+  const groups: Array<{
+    key: GroupKey;
+    label: string;
+    options: Array<{ value: string; label: string }>;
+  }> = [
+    {
+      key: 'urgency',
+      label: t.urgency,
+      options: [
+        { value: 'high', label: t.urgent },
+        { value: 'medium', label: t.important },
+        { value: 'low', label: t.normal },
+      ],
+    },
+    {
+      key: 'sentiment',
+      label: t.sentiment,
+      options: [
+        { value: 'positive', label: t.positive },
+        { value: 'neutral', label: t.neutral },
+        { value: 'negative', label: t.negative },
+      ],
+    },
+    {
+      key: 'language',
+      label: t.language,
+      options: [
+        { value: 'ar', label: t.arabic },
+        { value: 'en', label: t.english },
+        { value: 'mixed', label: t.mixed },
+      ],
+    },
+    {
+      key: 'status',
+      label: t.status,
+      options: [
+        { value: 'pending', label: t.pending },
+        { value: 'drafted', label: t.drafted },
+        { value: 'responded', label: t.responded },
+      ],
+    },
+  ];
 
   function setFilter(key: string, value: string | null) {
     const next = new URLSearchParams(params.toString());
@@ -103,7 +123,7 @@ export function InboxFilters() {
           onClick={() => startTransition(() => router.push(pathname))}
           className="text-xs text-ink-500 underline hover:text-ink-700"
         >
-          مسح الفلاتر
+          {t.clear}
         </button>
       )}
     </div>

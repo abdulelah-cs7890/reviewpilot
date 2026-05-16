@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import { eq } from 'drizzle-orm';
 import { db, restaurants, reviews } from '@/db';
 import { requireUser } from '@/lib/auth-utils';
+import { getUiLocale } from '@/lib/locale';
+import { appCopy } from '@/lib/app-copy';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { SentimentChart } from '@/components/dashboard/SentimentChart';
 import { TopicHeatmap } from '@/components/dashboard/TopicHeatmap';
@@ -38,10 +40,15 @@ function sentimentBucket(s: number): BucketKey {
 
 export default async function DashboardPage() {
   const { user } = await requireUser();
+  const locale = await getUiLocale();
+  const t = appCopy[locale].dashboard;
   const restaurant = await db.query.restaurants.findFirst({
     where: eq(restaurants.userId, user.id),
   });
   if (!restaurant) redirect('/onboarding');
+
+  const restaurantDisplayName =
+    locale === 'en' && restaurant.nameEn ? restaurant.nameEn : restaurant.name;
 
   const all = await db
     .select()
@@ -102,72 +109,63 @@ export default async function DashboardPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-ink-900">
-            لوحة المعلومات
-          </h1>
-          <p className="mt-1 text-sm text-ink-600">
-            ملخص آخر ٣٠ يوم لـ {restaurant.name}
-          </p>
+          <h1 className="text-2xl font-semibold tracking-tight text-ink-900">{t.title}</h1>
+          <p className="mt-1 text-sm text-ink-600">{t.summary(restaurantDisplayName)}</p>
         </div>
         <Link
           href="/inbox"
           className="rounded-xl border border-ink-200 bg-white px-4 py-2 text-sm text-ink-700 hover:bg-ink-100"
         >
-          عرض الصندوق
+          {t.viewInbox}
         </Link>
       </div>
 
       {/* Stat cards */}
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard label="إجمالي التقييمات" value={total} />
+        <StatCard label={t.stats.total} value={total} />
         <StatCard
-          label="معدل الرد"
+          label={t.stats.responseRate}
           value={`${responseRate}%`}
-          sub={`${respondedCount} من ${total}`}
+          sub={t.stats.responseRateSub(respondedCount, total)}
           tone={responseRate >= 70 ? 'positive' : responseRate >= 40 ? 'default' : 'warn'}
         />
         <StatCard
-          label="تقييمات عاجلة"
+          label={t.stats.urgent}
           value={urgentCount}
           tone={urgentCount > 0 ? 'warn' : 'default'}
         />
         <StatCard
-          label="متوسط المشاعر"
+          label={t.stats.avgSentiment}
           value={avgSentiment.toFixed(1)}
-          sub="على مقياس -٢ إلى +٢"
+          sub={t.stats.avgSentimentSub}
           tone={avgSentiment >= 0.5 ? 'positive' : avgSentiment <= -0.5 ? 'negative' : 'default'}
         />
       </div>
 
       {/* Sentiment over time */}
       <section className="mb-6 rounded-3xl border border-ink-100 bg-white p-6 shadow-sm">
-        <h2 className="mb-1 text-sm font-medium text-ink-900">المشاعر عبر الزمن</h2>
-        <p className="mb-4 text-xs text-ink-500">
-          متوسط مشاعر التقييمات لكل يوم. حجم النقطة يعكس عدد التقييمات في اليوم.
-        </p>
+        <h2 className="mb-1 text-sm font-medium text-ink-900">{t.sentimentTitle}</h2>
+        <p className="mb-4 text-xs text-ink-500">{t.sentimentSub}</p>
         <SentimentChart points={sentimentPoints} days={DAYS} />
       </section>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Topic heatmap */}
         <section className="rounded-3xl border border-ink-100 bg-white p-6 shadow-sm lg:col-span-2">
-          <h2 className="mb-1 text-sm font-medium text-ink-900">الموضوعات والمشاعر</h2>
-          <p className="mb-4 text-xs text-ink-500">
-            توزيع التقييمات حسب الموضوع ومستوى المشاعر.
-          </p>
-          <TopicHeatmap data={heatmapData} />
+          <h2 className="mb-1 text-sm font-medium text-ink-900">{t.topicsTitle}</h2>
+          <p className="mb-4 text-xs text-ink-500">{t.topicsSub}</p>
+          <TopicHeatmap data={heatmapData} locale={locale} />
         </section>
 
         {/* Urgency split */}
         <section className="rounded-3xl border border-ink-100 bg-white p-6 shadow-sm">
-          <h2 className="mb-1 text-sm font-medium text-ink-900">توزيع الإلحاح</h2>
-          <p className="mb-4 text-xs text-ink-500">
-            كم تقييم يحتاج رداً سريعاً.
-          </p>
+          <h2 className="mb-1 text-sm font-medium text-ink-900">{t.urgencyTitle}</h2>
+          <p className="mb-4 text-xs text-ink-500">{t.urgencySub}</p>
           <UrgencySplit
             high={urgencyCounts.high}
             medium={urgencyCounts.medium}
             low={urgencyCounts.low}
+            locale={locale}
           />
         </section>
       </div>

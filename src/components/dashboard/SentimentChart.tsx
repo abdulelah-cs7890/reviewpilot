@@ -36,6 +36,7 @@ export function SentimentChart({ points, days = 30 }: { points: Point[]; days?: 
       preserveAspectRatio="xMidYMid meet"
       role="img"
       aria-label="مخطط متوسط المشاعر عبر آخر ٣٠ يوم"
+      direction="ltr"
       className="block h-auto w-full"
     >
       {/* Y grid lines */}

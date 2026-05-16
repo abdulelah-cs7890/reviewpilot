@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import { eq, sql, desc, and, gte, lte, type SQL } from 'drizzle-orm';
 import { db, restaurants, reviews } from '@/db';
 import { requireUser } from '@/lib/auth-utils';
+import { getUiLocale } from '@/lib/locale';
+import { appCopy } from '@/lib/app-copy';
 import { UrgencyBadge } from '@/components/inbox/UrgencyBadge';
 import { SentimentTag } from '@/components/inbox/SentimentTag';
 import { StatusBadge } from '@/components/inbox/StatusBadge';
@@ -26,6 +28,9 @@ export default async function InboxPage({
     where: eq(restaurants.userId, user.id),
   });
   if (!restaurant) redirect('/onboarding');
+
+  const locale = await getUiLocale();
+  const t = appCopy[locale];
 
   const sp = await searchParams;
   const urgency = typeof sp.urgency === 'string' && URGENCY_VALUES.has(sp.urgency) ? sp.urgency : null;
@@ -56,32 +61,34 @@ export default async function InboxPage({
     <div>
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-ink-900">صندوق التقييمات</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-ink-900">
+            {t.inbox.title}
+          </h1>
           <p className="mt-1 text-sm text-ink-600">
-            {rows.length} من أصل {totalCount} تقييم
+            {t.inbox.countWith(rows.length, totalCount)}
           </p>
         </div>
         <Link
           href="/inbox/new"
           className="rounded-xl bg-ink-900 px-4 py-2 text-sm font-medium text-ink-50 hover:bg-ink-800"
         >
-          + إضافة تقييم
+          {t.inbox.addBtn}
         </Link>
       </div>
 
-      <WelcomeBanner isDemo={isDemo} />
+      <WelcomeBanner isDemo={isDemo} t={t.welcomeBanner} />
 
       <div className="mb-6 rounded-2xl border border-ink-100 bg-white p-4">
-        <InboxFilters />
+        <InboxFilters t={t.filters} />
       </div>
 
       {rows.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-ink-200 bg-white p-12 text-center">
-          <p className="text-ink-600">ما عندك تقييمات بعد.</p>
+          <p className="text-ink-600">{t.inbox.emptyTitle}</p>
           <p className="mt-2 text-sm text-ink-500">
-            أضف تقييمك الأول بالضغط على{' '}
+            {t.inbox.emptyHint}{' '}
             <Link href="/inbox/new" className="text-accent-dark underline">
-              إضافة تقييم
+              {t.inbox.emptyCta}
             </Link>
             .
           </p>
@@ -105,12 +112,12 @@ export default async function InboxPage({
                     <div className="min-w-0 flex-1">
                       <div className="mb-2 flex flex-wrap items-center gap-2">
                         <span className="text-sm font-medium text-ink-900">
-                          {r.authorName || 'مجهول'}
+                          {r.authorName || t.inbox.anonymous}
                         </span>
                         <StarRating rating={r.rating} />
-                        <UrgencyBadge urgency={r.urgency} />
-                        <SentimentTag sentiment={r.sentiment} />
-                        <StatusBadge status={r.status} />
+                        <UrgencyBadge urgency={r.urgency} locale={locale} />
+                        <SentimentTag sentiment={r.sentiment} locale={locale} />
+                        <StatusBadge status={r.status} locale={locale} />
                       </div>
                       <p
                         dir={r.language === 'en' ? 'ltr' : 'rtl'}
@@ -122,7 +129,7 @@ export default async function InboxPage({
                       </p>
                     </div>
                     <time className="shrink-0 text-xs text-ink-400">
-                      {formatRelative(r.postedAt)}
+                      {formatRelative(r.postedAt, t.time)}
                     </time>
                   </div>
                 </Link>
@@ -135,12 +142,12 @@ export default async function InboxPage({
   );
 }
 
-function formatRelative(date: Date): string {
+function formatRelative(date: Date, t: (typeof appCopy)['ar']['time']): string {
   const diffMs = Date.now() - date.getTime();
   const days = Math.floor(diffMs / (24 * 60 * 60 * 1000));
-  if (days === 0) return 'اليوم';
-  if (days === 1) return 'أمس';
-  if (days < 7) return `قبل ${days} أيام`;
-  if (days < 30) return `قبل ${Math.floor(days / 7)} أسابيع`;
-  return `قبل ${Math.floor(days / 30)} شهور`;
+  if (days === 0) return t.today;
+  if (days === 1) return t.yesterday;
+  if (days < 7) return t.daysAgo(days);
+  if (days < 30) return t.weeksAgo(Math.floor(days / 7));
+  return t.monthsAgo(Math.floor(days / 30));
 }

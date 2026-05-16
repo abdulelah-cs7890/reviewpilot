@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { DraftEditor } from './DraftEditor';
 import { QualityCheckCard } from './QualityCheckCard';
 import type { QualityCheckResult } from '@/db';
+import type { UiLocale } from '@/lib/locale';
 
 interface Draft {
   id: string;
@@ -19,13 +20,30 @@ interface Draft {
 export function DraftSwitcher({
   reviewId,
   drafts,
+  locale = 'ar',
 }: {
   reviewId: string;
   drafts: Draft[];
+  locale?: UiLocale;
 }) {
   // Drafts arrive ordered newest-first. The "current" default is the newest.
   const [idx, setIdx] = useState(0);
   const current = drafts[idx];
+
+  const labels =
+    locale === 'en'
+      ? {
+          older: '← Older',
+          newer: 'Newer →',
+          count: (cur: number, total: number) => `Draft ${cur} of ${total}`,
+          latest: '(latest)',
+        }
+      : {
+          older: '← الأقدم',
+          newer: 'الأحدث →',
+          count: (cur: number, total: number) => `صياغة ${cur} من ${total}`,
+          latest: '(الأحدث)',
+        };
 
   return (
     <div className="space-y-3">
@@ -37,11 +55,11 @@ export function DraftSwitcher({
             disabled={idx >= drafts.length - 1}
             className="text-ink-600 hover:text-ink-900 disabled:opacity-30"
           >
-            ← الأقدم
+            {labels.older}
           </button>
           <span className="text-ink-500">
-            صياغة {idx + 1} من {drafts.length}
-            {idx === 0 && <span className="ms-1 text-accent-dark">(الأحدث)</span>}
+            {labels.count(idx + 1, drafts.length)}
+            {idx === 0 && <span className="ms-1 text-accent-dark">{labels.latest}</span>}
           </span>
           <button
             type="button"
@@ -49,7 +67,7 @@ export function DraftSwitcher({
             disabled={idx === 0}
             className="text-ink-600 hover:text-ink-900 disabled:opacity-30"
           >
-            الأحدث →
+            {labels.newer}
           </button>
         </div>
       )}
@@ -59,11 +77,12 @@ export function DraftSwitcher({
         reviewId={reviewId}
         initialText={current.editedText ?? current.draftText}
         language={current.language}
+        locale={locale}
       />
       <QualityCheckCard check={current.qualityCheck} />
       <p className="text-xs text-ink-400">
         {current.model} · {current.promptVersion} ·{' '}
-        {new Date(current.generatedAt).toLocaleString('ar')}
+        {new Date(current.generatedAt).toLocaleString(locale)}
       </p>
     </div>
   );

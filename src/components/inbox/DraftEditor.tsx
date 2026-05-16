@@ -10,12 +10,34 @@ export function DraftEditor({
   reviewId,
   initialText,
   language,
+  locale = 'ar',
 }: {
   draftId: string;
   reviewId: string;
   initialText: string;
   language: 'ar' | 'en' | 'mixed';
+  locale?: 'ar' | 'en';
 }) {
+  const labels =
+    locale === 'en'
+      ? {
+          savedToast: 'Saved',
+          saveError: 'Could not save, try again',
+          respondedToast: 'Marked as responded',
+          respondError: 'Update failed',
+          save: 'Save edit',
+          saving: 'Saving...',
+          markResponded: '✓ Mark as responded',
+        }
+      : {
+          savedToast: 'تم حفظ التعديل',
+          saveError: 'تعذّر الحفظ، حاول مرة ثانية',
+          respondedToast: 'تم تحديث حالة التقييم',
+          respondError: 'تعذّر التحديث',
+          save: 'حفظ التعديل',
+          saving: 'جارٍ الحفظ...',
+          markResponded: '✓ تم الرد',
+        };
   const [text, setText] = useState(initialText);
   const [saving, startSave] = useTransition();
   const [responding, startRespond] = useTransition();
@@ -24,18 +46,18 @@ export function DraftEditor({
   async function onSave() {
     try {
       await saveDraftEdit(draftId, text);
-      toast.success('تم حفظ التعديل');
+      toast.success(labels.savedToast);
     } catch {
-      toast.error('تعذّر الحفظ، حاول مرة ثانية');
+      toast.error(labels.saveError);
     }
   }
 
   async function onMarkResponded() {
     try {
       await markAsResponded(reviewId);
-      toast.success('تم تحديث حالة التقييم');
+      toast.success(labels.respondedToast);
     } catch {
-      toast.error('تعذّر التحديث');
+      toast.error(labels.respondError);
     }
   }
 
@@ -56,7 +78,7 @@ export function DraftEditor({
           onClick={() => startSave(onSave)}
           className="rounded-xl border border-ink-200 bg-white px-4 py-2 text-sm text-ink-700 hover:bg-ink-100 disabled:opacity-50"
         >
-          {saving ? 'جارٍ الحفظ...' : 'حفظ التعديل'}
+          {saving ? labels.saving : labels.save}
         </button>
         <button
           type="button"
@@ -64,7 +86,7 @@ export function DraftEditor({
           onClick={() => startRespond(onMarkResponded)}
           className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
         >
-          {responding ? '...' : '✓ تم الرد'}
+          {responding ? '...' : labels.markResponded}
         </button>
       </div>
     </div>

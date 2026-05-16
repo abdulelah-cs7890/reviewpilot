@@ -3,7 +3,10 @@ import { redirect } from 'next/navigation';
 import { eq } from 'drizzle-orm';
 import { db, restaurants } from '@/db';
 import { getCurrentUser } from '@/lib/auth-utils';
+import { getUiLocale, dirFor } from '@/lib/locale';
+import { appCopy } from '@/lib/app-copy';
 import { SignOutButton } from '@/components/SignOutButton';
+import { LanguageToggle } from '@/components/LanguageToggle';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const result = await getCurrentUser();
@@ -15,8 +18,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     where: eq(restaurants.userId, result.user.id),
   });
 
+  const locale = await getUiLocale();
+  const t = appCopy[locale];
+
   return (
-    <div dir="rtl" lang="ar" className="min-h-screen bg-ink-50 text-ink-800">
+    <div dir={dirFor(locale)} lang={locale} className="min-h-screen bg-ink-50 text-ink-800">
       <header className="border-b border-ink-100 bg-white">
         <div className="mx-auto max-w-6xl px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
@@ -26,12 +32,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               </Link>
               {restaurant && (
                 <span className="hidden text-sm text-ink-600 sm:inline">
-                  · {restaurant.name}
+                  · {locale === 'en' && restaurant.nameEn ? restaurant.nameEn : restaurant.name}
                 </span>
               )}
               {result.isDemo && (
                 <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs text-accent-dark">
-                  تجريبي
+                  {t.nav.demoBadge}
                 </span>
               )}
             </div>
@@ -39,23 +45,24 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               {restaurant && (
                 <>
                   <Link href="/inbox" className="text-ink-600 hover:text-ink-900">
-                    التقييمات
+                    {t.nav.reviews}
                   </Link>
                   <Link href="/dashboard" className="text-ink-600 hover:text-ink-900">
-                    اللوحة
+                    {t.nav.dashboard}
                   </Link>
                   <Link href="/settings" className="text-ink-600 hover:text-ink-900">
-                    الإعدادات
+                    {t.nav.settings}
                   </Link>
                   <Link
                     href="/inbox/new"
                     className="rounded-lg bg-ink-100 px-3 py-1 text-ink-700 hover:bg-ink-200"
                   >
-                    + إضافة
+                    {t.nav.addReview}
                   </Link>
                 </>
               )}
-              <SignOutButton />
+              <LanguageToggle locale={locale} />
+              <SignOutButton label={t.nav.signOut} />
             </nav>
           </div>
         </div>
