@@ -12,6 +12,7 @@ import { DraftSwitcher } from '@/components/inbox/DraftSwitcher';
 import { RegenerateButton } from '@/components/inbox/RegenerateButton';
 import { StarRating } from '@/components/inbox/StarRating';
 import { AiDraftedBadge } from '@/components/AiDraftedBadge';
+import { ImproveDraftInput } from '@/components/inbox/ImproveDraftInput';
 
 export default async function ReviewDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -87,7 +88,10 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
           />
         </div>
         {allDrafts.length > 0 ? (
-          <DraftSwitcher reviewId={review.id} drafts={allDrafts} locale={locale} />
+          <>
+            <DraftSwitcher reviewId={review.id} drafts={allDrafts} locale={locale} />
+            <ImproveDraftInput reviewId={review.id} locale={locale} />
+          </>
         ) : (
           <p className="text-ink-600">{t.detail.noDraftYet}</p>
         )}

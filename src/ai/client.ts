@@ -21,7 +21,7 @@ if (!process.env.GEMINI_API_KEY) {
   );
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+export const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // Bump prompt versions when prompts change materially — used for tracking
 // which drafts came from which iteration of the prompt.

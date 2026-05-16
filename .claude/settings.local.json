@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(GIT_AUTHOR_NAME=Abdulelah GIT_AUTHOR_EMAIL=abdulallah7981@gmail.com GIT_COMMITTER_NAME=Abdulelah GIT_COMMITTER_EMAIL=abdulallah7981@gmail.com git commit -m ' *)"
+      "Bash(GIT_AUTHOR_NAME=Abdulelah GIT_AUTHOR_EMAIL=abdulallah7981@gmail.com GIT_COMMITTER_NAME=Abdulelah GIT_COMMITTER_EMAIL=abdulallah7981@gmail.com git commit -m ' *)",
+      "Bash(xargs grep -l 'generateContentStream')",
+      "Bash(curl -s -o /dev/null -w 'dev server HTTP %{http_code}\\\\n' http://localhost:3001/)"
     ]
   }
 }

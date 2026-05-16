@@ -4,13 +4,46 @@
 
 Reviews come in Arabic (Gulf or MSA), English, or code-switched. ReviewPilot reads each review, drafts a culturally-correct reply that **matches the reviewer's dialect and the restaurant's tone profile**, and gives the owner an inbox where they edit, copy, and mark-as-responded in seconds.
 
-![Inbox screenshot](public/screenshots/inbox.png)
+![Inbox view — RTL-first, urgency-coded, bilingual UI toggle](public/screenshots/inbox.png)
 
 ---
 
 ## ➡️ Try the live demo
 
-**[reviewpilot.vercel.app](https://reviewpilot.vercel.app)** — click "Try the demo" on the login page. No signup, no setup. You'll land in a pre-seeded restaurant with 8 real-feel reviews already analyzed and draft replies ready to copy.
+**[reviewpilot.vercel.app](https://reviewpilot.vercel.app)** — click "جرّب العرض التجريبي" / "Try the live demo" on the landing hero. **One click, no signup.** You'll land in a pre-seeded restaurant with 8 real-feel reviews already analyzed and draft replies ready to copy.
+
+<!--
+Demo video slot — record a 30–60s walkthrough and drop it here.
+
+Recording options:
+- macOS:    Cmd+Shift+5 → record selection
+- Windows:  Win+G → Game Bar → screen capture
+- Either:   Loom (loom.com) — easiest; gives an embeddable link
+- Either:   ScreenToGif (windows) → GIF you can drop in public/demo.gif
+
+To embed:
+  - GIF:       ![Demo](public/demo.gif)
+  - mp4 file:  <video src="public/demo.mp4" controls width="720"></video>
+  - Loom:      paste the share link directly (GitHub renders the preview)
+
+Suggested flow to capture:
+  1. Landing → click "Try the live demo"
+  2. Inbox → urgent hygiene review (top)
+  3. Detail → show quality check, click "اقترح صياغة أخرى" → wait for new draft → switch between drafts
+  4. Type "اجعلها أقصر" in the improve input → Apply → new draft appears
+  5. Manual paste flow: /inbox/new → paste a review → watch the AI stream the response
+  6. Dashboard → show charts
+  7. Click EN toggle → whole UI flips to English
+-->
+
+## Screenshots
+
+| | |
+|---|---|
+| ![Detail view with AI quality check + improve-this-draft input](public/screenshots/detail.png) | ![Dashboard: sentiment line, topic heatmap, urgency split](public/screenshots/dashboard.png) |
+| Review detail — analyzer tags + editable draft + AI quality grade + improve-this-draft + multi-draft switcher | Dashboard — sentiment-over-time, topic × sentiment heatmap, urgency split |
+| ![Settings: edit voice profile](public/screenshots/settings.png) | ![Mobile inbox (375px) — RTL responsive](public/screenshots/mobile-inbox.png) |
+| Settings — change formality / dialect / religious / signoff after onboarding | Mobile inbox at 375px — RTL, hamburger-free flex-wrap nav |
 
 ---
 
@@ -28,6 +61,9 @@ Reviews come in Arabic (Gulf or MSA), English, or code-switched. ReviewPilot rea
 | **Manual paste** | Drop a review text in, get analysis + draft + quality check in ~10–15s |
 | **Settings** | Edit the voice profile after onboarding; new drafts pick up the new voice |
 | **Dashboard** | Sentiment-over-time line chart, topic×sentiment heatmap, urgency split, response-rate stat |
+| **Improve this draft** | Free-form instruction input ("make it shorter", "more apologetic") → AI rewrites the current draft and saves it as a new version |
+| **Streaming AI** | Manual paste streams the draft character-by-character — no spinner block |
+| **Bilingual UI** | One-click EN/AR toggle in the top bar; chrome flips between Arabic (RTL) and English (LTR) instantly |
 
 ## Architecture
 
@@ -73,6 +109,9 @@ Every AI call goes through one file (`src/ai/client.ts`) — swap providers by c
 - **Sample-driven prompt iteration.** [`samples/reviews.ts`](samples/reviews.ts) holds 25 realistic Saudi reviews (Gulf rave, hygiene complaint with regulator threat, delivery-app context, prayer-time issue, allergy reaction, expat writing English, formal sheikh, code-switched). `npm run ai:test` runs the engine against all of them.
 - **Retry/backoff that honors Gemini's `retryDelay`** in 429 errors, instead of fixed exponential. Cuts wasted wait time when the API tells us exactly how long.
 - **AI quality-check meta-grading.** After the drafter produces a response, a third Flash-Lite call grades the draft against each concrete issue the reviewer raised — does the draft acknowledge the cold food, the 90-minute delay, the rude staff? Stored alongside the draft and rendered inline as ✓/✗ per issue. Failure-tolerant: if the check 429s or fails to parse, the draft still saves and the UI hides the card. See `src/ai/quality.ts`.
+- **Streaming draft generation.** The manual-paste flow uses `generateContentStream` and SSE so the owner watches the AI type the response character-by-character (no spinner block, no 10-second blank wait). Server-Sent Events emit `analysis` → `chunk`* → `draft` → `quality` → `done`; the client reads via `fetch.body.getReader()`. See `src/app/api/draft/route.ts`.
+- **"Improve this draft" — conversational AI on top of regenerate.** The owner types a free-form instruction like *"اجعلها أقصر"* or *"more apologetic"*; the model rewrites the current draft preserving language/register while obeying the instruction. New draft row, accessible via the draft switcher. See `src/ai/improve.ts`.
+- **Bilingual UI** with a one-click EN/AR toggle stored in a cookie. App chrome (nav, page titles, badges, filters, dashboard panels, settings form) reads from a single `src/lib/app-copy.ts` keyed by locale. Review/draft content keeps its own per-review language regardless — the toggle is for the UI, not the data.
 
 ## Run locally
 
@@ -90,6 +129,14 @@ npm run db:generate
 npm run db:migrate
 npm run db:seed      # creates the demo restaurant with 8 pre-analyzed reviews
 npm run dev          # http://localhost:3000
+```
+
+To regenerate the README screenshots after a UI change:
+
+```bash
+npx playwright install chromium   # one-time
+npm run dev                       # leave running in another terminal
+npm run screenshots               # writes 6 PNGs to public/screenshots/
 ```
 
 Then click "Try the demo" on `/login` to skip the email step.

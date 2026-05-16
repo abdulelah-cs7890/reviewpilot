@@ -35,7 +35,7 @@ export interface DraftResult {
   rationale?: string;
 }
 
-const DRAFTER_SYSTEM_PROMPT = `You write Google review responses for a Saudi restaurant. You write as the restaurant itself — in first person plural ("we", "نحن"). You speak to the customer directly.
+export const DRAFTER_SYSTEM_PROMPT = `You write Google review responses for a Saudi restaurant. You write as the restaurant itself — in first person plural ("we", "نحن"). You speak to the customer directly.
 
 # Hard rules
 
@@ -102,7 +102,56 @@ Return ONLY a JSON object, no prose around it:
   "rationale": "one short sentence explaining your tone/language choice"
 }`;
 
-function buildVoiceProfileSection(profile: VoiceProfileInput): string {
+/**
+ * Streaming variant of the drafter system prompt. Same rules, but outputs
+ * the raw response text instead of a JSON wrapper, so we can stream it
+ * character-by-character to the UI without the user seeing JSON syntax.
+ * Caller infers language from the analysis (which the rules already say
+ * must match the reviewer's language anyway).
+ */
+export const DRAFTER_SYSTEM_PROMPT_TEXT =
+  DRAFTER_SYSTEM_PROMPT.replace(
+    /# Output format[\s\S]*$/,
+    `# Output format
+
+Return ONLY the response text. No JSON, no markdown fences, no labels, no preamble, no quotation marks around the text. Just the response itself, ready to paste as a reply.`
+  );
+
+export function buildDrafterUserPrompt(params: {
+  reviewText: string;
+  rating: number;
+  authorName?: string;
+  analysis: ReviewAnalysis;
+  voiceProfile: VoiceProfileInput;
+  restaurantName: string;
+}): string {
+  const voiceSection = buildVoiceProfileSection(params.voiceProfile);
+  const analysisSection = `# Analysis of this review
+- Language detected: ${params.analysis.language}${params.analysis.dialect ? ` (${params.analysis.dialect})` : ''}
+- Sentiment: ${params.analysis.sentiment} (scale -2 to 2)
+- Topics: ${params.analysis.topics.join(', ') || 'none'}
+- Urgency: ${params.analysis.urgency}
+- Specific dishes mentioned: ${params.analysis.mentions.dishes?.join(', ') || 'none'}
+- Specific issues: ${params.analysis.mentions.issues?.join(', ') || 'none'}
+- Specific praise: ${params.analysis.mentions.praise?.join(', ') || 'none'}`;
+
+  return `Restaurant: ${params.restaurantName}
+
+${voiceSection}
+
+${analysisSection}
+
+# The review to respond to
+Rating: ${params.rating}/5
+${params.authorName ? `Reviewer name: ${params.authorName}\n` : ''}Text:
+"""
+${params.reviewText}
+"""
+
+Write the response now.`;
+}
+
+export function buildVoiceProfileSection(profile: VoiceProfileInput): string {
   const lines: string[] = ['# Voice profile for this restaurant'];
 
   lines.push(`- Formality: ${profile.formality}`);
@@ -140,31 +189,7 @@ export async function draftResponse(params: {
    *  ~0.9 to get a genuinely different alternative draft. */
   temperature?: number;
 }): Promise<DraftResult> {
-  const voiceSection = buildVoiceProfileSection(params.voiceProfile);
-
-  const analysisSection = `# Analysis of this review
-- Language detected: ${params.analysis.language}${params.analysis.dialect ? ` (${params.analysis.dialect})` : ''}
-- Sentiment: ${params.analysis.sentiment} (scale -2 to 2)
-- Topics: ${params.analysis.topics.join(', ') || 'none'}
-- Urgency: ${params.analysis.urgency}
-- Specific dishes mentioned: ${params.analysis.mentions.dishes?.join(', ') || 'none'}
-- Specific issues: ${params.analysis.mentions.issues?.join(', ') || 'none'}
-- Specific praise: ${params.analysis.mentions.praise?.join(', ') || 'none'}`;
-
-  const userPrompt = `Restaurant: ${params.restaurantName}
-
-${voiceSection}
-
-${analysisSection}
-
-# The review to respond to
-Rating: ${params.rating}/5
-${params.authorName ? `Reviewer name: ${params.authorName}\n` : ''}Text:
-"""
-${params.reviewText}
-"""
-
-Write the response now. Return the JSON only.`;
+  const userPrompt = buildDrafterUserPrompt(params);
 
   const result = await generateJSON<{
     draftText: string;
