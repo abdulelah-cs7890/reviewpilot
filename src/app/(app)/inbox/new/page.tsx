@@ -1,9 +1,19 @@
 import Link from 'next/link';
+import { eq } from 'drizzle-orm';
+import { db, restaurants } from '@/db';
 import { getUiLocale } from '@/lib/locale';
+import { requireUser } from '@/lib/auth-utils';
+import { countOwnerEdits } from '@/ai/owner-edits';
 import { StreamingManualReviewForm } from '@/components/StreamingManualReviewForm';
 
 export default async function NewReviewPage() {
   const locale = await getUiLocale();
+  const { user } = await requireUser();
+  const restaurant = await db.query.restaurants.findFirst({
+    where: eq(restaurants.userId, user.id),
+  });
+  const editsCount = restaurant ? await countOwnerEdits(restaurant.id) : 0;
+
   const copy =
     locale === 'en'
       ? {
@@ -27,7 +37,7 @@ export default async function NewReviewPage() {
       </h1>
       <p className="mb-6 text-sm text-ink-600">{copy.sub}</p>
       <div className="rounded-3xl border border-ink-100 bg-white p-6 shadow-sm sm:p-8">
-        <StreamingManualReviewForm locale={locale} />
+        <StreamingManualReviewForm locale={locale} editsCount={editsCount} />
       </div>
     </div>
   );

@@ -13,6 +13,7 @@ import { RegenerateButton } from '@/components/inbox/RegenerateButton';
 import { StarRating } from '@/components/inbox/StarRating';
 import { AiDraftedBadge } from '@/components/AiDraftedBadge';
 import { ImproveDraftInput } from '@/components/inbox/ImproveDraftInput';
+import { customerHref } from '@/lib/customer-name';
 
 export default async function ReviewDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -44,9 +45,18 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
       {/* The review */}
       <section className="mb-6 rounded-3xl border border-ink-100 bg-white p-6 shadow-sm sm:p-8">
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className="text-sm font-medium text-ink-900">
-            {review.authorName || t.inbox.anonymous}
-          </span>
+          {review.authorName && customerHref(review.authorName) ? (
+            <Link
+              href={customerHref(review.authorName) as string}
+              className="text-sm font-medium text-ink-900 hover:text-accent-dark hover:underline"
+            >
+              {review.authorName}
+            </Link>
+          ) : (
+            <span className="text-sm font-medium text-ink-900">
+              {review.authorName || t.inbox.anonymous}
+            </span>
+          )}
           <StarRating rating={review.rating} size={18} />
           <UrgencyBadge urgency={review.urgency} locale={locale} />
           <SentimentTag sentiment={review.sentiment} locale={locale} />

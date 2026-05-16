@@ -3,7 +3,15 @@
     "allow": [
       "Bash(GIT_AUTHOR_NAME=Abdulelah GIT_AUTHOR_EMAIL=abdulallah7981@gmail.com GIT_COMMITTER_NAME=Abdulelah GIT_COMMITTER_EMAIL=abdulallah7981@gmail.com git commit -m ' *)",
       "Bash(xargs grep -l 'generateContentStream')",
-      "Bash(curl -s -o /dev/null -w 'dev server HTTP %{http_code}\\\\n' http://localhost:3001/)"
+      "Bash(curl -s -o /dev/null -w 'dev server HTTP %{http_code}\\\\n' http://localhost:3001/)",
+      "Bash(curl -s -o /tmp/live-landing.html -w 'HTTP %{http_code} | size %{size_download}\\\\n' https://reviewpilot-drab-two.vercel.app/)",
+      "Bash(curl -s -o /tmp/live-en.html -w 'HTTP %{http_code}\\\\n' https://reviewpilot-drab-two.vercel.app/en)",
+      "Bash(curl -s -o /tmp/live-login.html -w 'HTTP %{http_code}\\\\n' https://reviewpilot-drab-two.vercel.app/login)",
+      "Bash(curl -s -o /dev/null -w 'HTTP %{http_code} | redirect %{redirect_url}\\\\n' https://reviewpilot-drab-two.vercel.app/inbox)",
+      "Bash(curl -s -o /dev/null -w 'HTTP %{http_code}\\\\n' https://reviewpilot-drab-two.vercel.app/api/auth/get-session)",
+      "Bash(node -e 'const c=require\\('\\\\''node:crypto'\\\\''\\); const id='\\\\''demo_user_001'\\\\''; const sig=c.createHmac\\('\\\\''sha256'\\\\'','\\\\''zwBIDAhAE5Q0VLz4cSFSOZxvT9IIntxTK447AQ7M2xQ'\\\\''\\).update\\(id\\).digest\\('\\\\''base64url'\\\\''\\); console.log\\(id+'\\\\''.'\\\\''+sig\\)')",
+      "Bash(curl -sN -X POST -b reviewpilot_demo=__TRACKED_VAR__ -H 'Content-Type: application/json' -d '{\"rating\":5,\"reviewText\":\"الأكل لذيذ جداً والخدمة ممتازة\",\"authorName\":\"اختبار\"}' https://reviewpilot-drab-two.vercel.app/api/draft --max-time 6)",
+      "Bash(curl -s -b reviewpilot_demo=__TRACKED_VAR__ -o /tmp/p7-inbox.html -w 'HTTP %{http_code}\\\\n' http://localhost:3001/inbox)"
     ]
   }
 }

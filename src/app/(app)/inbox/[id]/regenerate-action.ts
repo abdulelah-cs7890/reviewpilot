@@ -5,6 +5,7 @@ import { eq, and } from 'drizzle-orm';
 import { db, restaurants, reviews, drafts, voiceProfiles } from '@/db';
 import { draftResponse, type VoiceProfileInput } from '@/ai/drafter';
 import { qualityCheck } from '@/ai/quality';
+import { getOwnerEditExamples } from '@/ai/owner-edits';
 import type { ReviewAnalysis } from '@/ai/analyzer';
 import { requireUser } from '@/lib/auth-utils';
 
@@ -67,6 +68,7 @@ export async function regenerateDraft(reviewId: string): Promise<RegenerateResul
   };
 
   try {
+    const ownerEdits = await getOwnerEditExamples(restaurant.id);
     const result = await draftResponse({
       reviewText: r.reviewText,
       rating: r.rating,
@@ -75,6 +77,7 @@ export async function regenerateDraft(reviewId: string): Promise<RegenerateResul
       voiceProfile,
       restaurantName: restaurant.name,
       temperature: 0.9, // higher than default (0.7) — encourage a meaningfully different draft
+      ownerEdits,
     });
 
     // Best-effort meta-grade. Failure here doesn't block the regenerate.

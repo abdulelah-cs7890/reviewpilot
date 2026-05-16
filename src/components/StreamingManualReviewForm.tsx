@@ -68,8 +68,10 @@ interface QualityResult {
 
 export function StreamingManualReviewForm({
   locale = 'ar',
+  editsCount = 0,
 }: {
   locale?: 'ar' | 'en';
+  editsCount?: number;
 }) {
   const router = useRouter();
   const t = LABELS[locale];
@@ -215,6 +217,14 @@ export function StreamingManualReviewForm({
                 ? t.checking
                 : t.submit}
         </button>
+        {editsCount > 0 && (
+          <p className="flex items-center justify-center gap-1.5 text-xs text-ink-500">
+            <Sparkles className="h-3 w-3 text-accent-dark" />
+            {locale === 'en'
+              ? `Learning from ${editsCount} past edit${editsCount === 1 ? '' : 's'}`
+              : `يتعلّم من ${editsCount} تعديل سابق`}
+          </p>
+        )}
       </form>
 
       {analysis && (

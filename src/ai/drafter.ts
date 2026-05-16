@@ -1,5 +1,6 @@
 import { generateJSON, MODELS, PROMPT_VERSIONS, Type, type ResponseSchema } from './client';
 import type { ReviewAnalysis } from './analyzer';
+import { formatEditsForPrompt, type OwnerEditExample } from './owner-edits';
 
 // Typed schema for the drafter's JSON output. Mirrors the parsed shape below.
 const draftSchema: ResponseSchema = {
@@ -188,8 +189,12 @@ export async function draftResponse(params: {
   /** Override drafter temperature. Defaults to 0.7. The regenerate flow uses
    *  ~0.9 to get a genuinely different alternative draft. */
   temperature?: number;
+  /** Past owner edits to learn from. Empty/undefined disables the feature. */
+  ownerEdits?: OwnerEditExample[];
 }): Promise<DraftResult> {
   const userPrompt = buildDrafterUserPrompt(params);
+  const systemPrompt =
+    DRAFTER_SYSTEM_PROMPT + formatEditsForPrompt(params.ownerEdits ?? []);
 
   const result = await generateJSON<{
     draftText: string;
@@ -197,7 +202,7 @@ export async function draftResponse(params: {
     rationale?: string;
   }>({
     model: MODELS.smart,
-    systemPrompt: DRAFTER_SYSTEM_PROMPT,
+    systemPrompt,
     userPrompt,
     maxTokens: 2048,
     temperature: params.temperature ?? 0.7,

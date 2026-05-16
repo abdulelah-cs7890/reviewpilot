@@ -11,6 +11,7 @@ import { StatusBadge } from '@/components/inbox/StatusBadge';
 import { InboxFilters } from '@/components/inbox/InboxFilters';
 import { WelcomeBanner } from '@/components/inbox/WelcomeBanner';
 import { StarRating } from '@/components/inbox/StarRating';
+import { customerHref } from '@/lib/customer-name';
 
 const SNIPPET_LEN = 140;
 
@@ -68,12 +69,20 @@ export default async function InboxPage({
             {t.inbox.countWith(rows.length, totalCount)}
           </p>
         </div>
-        <Link
-          href="/inbox/new"
-          className="rounded-xl bg-ink-900 px-4 py-2 text-sm font-medium text-ink-50 hover:bg-ink-800"
-        >
-          {t.inbox.addBtn}
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/inbox/bulk"
+            className="rounded-xl border border-ink-200 bg-white px-4 py-2 text-sm text-ink-700 hover:bg-ink-100"
+          >
+            {locale === 'en' ? '+ Bulk add' : '+ إضافة دفعة'}
+          </Link>
+          <Link
+            href="/inbox/new"
+            className="rounded-xl bg-ink-900 px-4 py-2 text-sm font-medium text-ink-50 hover:bg-ink-800"
+          >
+            {t.inbox.addBtn}
+          </Link>
+        </div>
       </div>
 
       <WelcomeBanner isDemo={isDemo} t={t.welcomeBanner} />
@@ -102,37 +111,52 @@ export default async function InboxPage({
                 : r.urgency === 'medium'
                   ? 'border-s-4 border-s-amber-400'
                   : '';
+            const authorHref = r.authorName ? customerHref(r.authorName) : null;
             return (
-              <li key={r.id}>
+              <li
+                key={r.id}
+                className={`group relative rounded-2xl border border-ink-100 bg-white p-5 transition hover:-translate-y-0.5 hover:border-ink-200 hover:shadow-md ${urgencyBorder}`}
+              >
+                {/* Whole-card click target — sits BEHIND the inner content so
+                    nested Links (author → /customer) still receive clicks. */}
                 <Link
                   href={`/inbox/${r.id}`}
-                  className={`block rounded-2xl border border-ink-100 bg-white p-5 transition hover:-translate-y-0.5 hover:border-ink-200 hover:shadow-md ${urgencyBorder}`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                  aria-label={`Open review by ${r.authorName ?? 'anonymous'}`}
+                  className="absolute inset-0 z-0 rounded-2xl"
+                />
+                <div className="relative z-10 flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                      {r.authorName && authorHref ? (
+                        <Link
+                          href={authorHref}
+                          className="text-sm font-medium text-ink-900 hover:text-accent-dark hover:underline"
+                        >
+                          {r.authorName}
+                        </Link>
+                      ) : (
                         <span className="text-sm font-medium text-ink-900">
                           {r.authorName || t.inbox.anonymous}
                         </span>
-                        <StarRating rating={r.rating} />
-                        <UrgencyBadge urgency={r.urgency} locale={locale} />
-                        <SentimentTag sentiment={r.sentiment} locale={locale} />
-                        <StatusBadge status={r.status} locale={locale} />
-                      </div>
-                      <p
-                        dir={r.language === 'en' ? 'ltr' : 'rtl'}
-                        className="text-ink-700"
-                      >
-                        {r.reviewText.length > SNIPPET_LEN
-                          ? r.reviewText.slice(0, SNIPPET_LEN) + '…'
-                          : r.reviewText}
-                      </p>
+                      )}
+                      <StarRating rating={r.rating} />
+                      <UrgencyBadge urgency={r.urgency} locale={locale} />
+                      <SentimentTag sentiment={r.sentiment} locale={locale} />
+                      <StatusBadge status={r.status} locale={locale} />
                     </div>
-                    <time className="shrink-0 text-xs text-ink-400">
-                      {formatRelative(r.postedAt, t.time)}
-                    </time>
+                    <p
+                      dir={r.language === 'en' ? 'ltr' : 'rtl'}
+                      className="pointer-events-none text-ink-700"
+                    >
+                      {r.reviewText.length > SNIPPET_LEN
+                        ? r.reviewText.slice(0, SNIPPET_LEN) + '…'
+                        : r.reviewText}
+                    </p>
                   </div>
-                </Link>
+                  <time className="pointer-events-none shrink-0 text-xs text-ink-400">
+                    {formatRelative(r.postedAt, t.time)}
+                  </time>
+                </div>
               </li>
             );
           })}

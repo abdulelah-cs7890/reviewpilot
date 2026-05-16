@@ -21,6 +21,7 @@ import {
 import type { ReviewAnalysis } from './analyzer';
 import type { VoiceProfileInput, DraftResult } from './drafter';
 import { buildVoiceProfileSection } from './drafter';
+import { formatEditsForPrompt, type OwnerEditExample } from './owner-edits';
 
 const draftSchema: ResponseSchema = {
   type: Type.OBJECT,
@@ -68,6 +69,8 @@ export async function improveDraft(params: {
   analysis: ReviewAnalysis;
   voiceProfile: VoiceProfileInput;
   restaurantName: string;
+  /** Past owner edits to learn from. Empty/undefined disables the feature. */
+  ownerEdits?: OwnerEditExample[];
 }): Promise<DraftResult> {
   const voiceSection = buildVoiceProfileSection(params.voiceProfile);
 
@@ -101,13 +104,16 @@ ${params.instruction}
 
 Rewrite the draft accordingly. Return JSON only.`;
 
+  const systemPrompt =
+    IMPROVE_SYSTEM_PROMPT + formatEditsForPrompt(params.ownerEdits ?? []);
+
   const result = await generateJSON<{
     draftText: string;
     language: 'ar' | 'en' | 'mixed';
     rationale?: string;
   }>({
     model: MODELS.smart,
-    systemPrompt: IMPROVE_SYSTEM_PROMPT,
+    systemPrompt,
     userPrompt,
     maxTokens: 2048,
     temperature: 0.6,

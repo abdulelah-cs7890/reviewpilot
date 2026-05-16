@@ -64,6 +64,9 @@ Suggested flow to capture:
 | **Improve this draft** | Free-form instruction input ("make it shorter", "more apologetic") → AI rewrites the current draft and saves it as a new version |
 | **Streaming AI** | Manual paste streams the draft character-by-character — no spinner block |
 | **Bilingual UI** | One-click EN/AR toggle in the top bar; chrome flips between Arabic (RTL) and English (LTR) instantly |
+| **Learn-from-edits** | When you edit an AI draft and save, your edits become few-shot examples for the next draft. The AI literally adopts your voice with use — no fine-tuning. |
+| **Customer timeline** | Click any author's name in the inbox → see all their reviews and your replies across time, with stats (visit count, avg rating, days since last visit) |
+| **Bulk paste** | Paste many reviews at once, separated by `---` blocks. Each gets analyzed + drafted sequentially with per-entry progress and quota-aware stopping. |
 
 ## Architecture
 
@@ -112,6 +115,7 @@ Every AI call goes through one file (`src/ai/client.ts`) — swap providers by c
 - **Streaming draft generation.** The manual-paste flow uses `generateContentStream` and SSE so the owner watches the AI type the response character-by-character (no spinner block, no 10-second blank wait). Server-Sent Events emit `analysis` → `chunk`* → `draft` → `quality` → `done`; the client reads via `fetch.body.getReader()`. See `src/app/api/draft/route.ts`.
 - **"Improve this draft" — conversational AI on top of regenerate.** The owner types a free-form instruction like *"اجعلها أقصر"* or *"more apologetic"*; the model rewrites the current draft preserving language/register while obeying the instruction. New draft row, accessible via the draft switcher. See `src/ai/improve.ts`.
 - **Bilingual UI** with a one-click EN/AR toggle stored in a cookie. App chrome (nav, page titles, badges, filters, dashboard panels, settings form) reads from a single `src/lib/app-copy.ts` keyed by locale. Review/draft content keeps its own per-review language regardless — the toggle is for the UI, not the data.
+- **Learn-from-edits — the closest thing to fine-tuning we ship without retraining.** Every time the owner edits an AI draft and saves, `(reviewText, original_draft, owner_edit)` becomes a few-shot example in the next drafter call's system prompt. Bounded at 5 examples to keep token cost stable. See `src/ai/owner-edits.ts`. Visible in `/settings` ("AI is learning from N past edits") and in `/inbox/new` (caption under the submit button).
 
 ## Run locally
 

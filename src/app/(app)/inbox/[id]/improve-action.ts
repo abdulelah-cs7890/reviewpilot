@@ -5,6 +5,7 @@ import { eq, and, desc } from 'drizzle-orm';
 import { db, restaurants, reviews, drafts, voiceProfiles } from '@/db';
 import { improveDraft } from '@/ai/improve';
 import { qualityCheck } from '@/ai/quality';
+import { getOwnerEditExamples } from '@/ai/owner-edits';
 import type { ReviewAnalysis } from '@/ai/analyzer';
 import type { VoiceProfileInput } from '@/ai/drafter';
 import { requireUser } from '@/lib/auth-utils';
@@ -80,6 +81,7 @@ export async function improveDraftAction(
   };
 
   try {
+    const ownerEdits = await getOwnerEditExamples(restaurant.id);
     const improved = await improveDraft({
       originalDraftText: latest.editedText ?? latest.draftText,
       instruction: trimmed,
@@ -88,6 +90,7 @@ export async function improveDraftAction(
       analysis,
       voiceProfile,
       restaurantName: restaurant.name,
+      ownerEdits,
     });
 
     // Best-effort quality check on the improved draft

@@ -30,6 +30,12 @@ const REVIEWS_SEED = [
     daysAgo: 2,
     draftText:
       'يا هلا والله بفهد، كلامك عن الكبسة الخرافية والخدمة السريعة يسعدنا كثير. شهادتك وزياراتك المتكررة هالشهر شرف كبير لنا، والله يعافيك. ننتظرك دايماً.',
+    // The owner shortened the AI draft, dropped "الخرافية" (the model's
+    // word, not the restaurant's voice), and added a specific staff
+    // mention. Pattern this seeds for learn-from-edits: more personal,
+    // names staff, no AI superlatives.
+    editedText:
+      'يا هلا فهد، شهادتك تشرفنا. الكبسة عند الشيف عيسى تعرف كيف، والخدمة السريعة هدفنا الدائم. حجزنا لك طاولتك الثابتة. ننتظرك.',
     draftLanguage: 'ar' as const,
     qualityCheck: {
       checks: [],
@@ -94,6 +100,11 @@ const REVIEWS_SEED = [
     daysAgo: 12,
     draftText:
       "Thank you, Reem! We're delighted you enjoyed the mixed grill and found our service attentive. We can't wait to welcome you and your family back soon. Restaurant management.",
+    // Owner signed by name (Khaled, the actual restaurant owner), named
+    // the chef, and offered a concrete invite. Same edit pattern:
+    // less generic, more specific, owner is identifiable.
+    editedText:
+      "Reem, our team will be so happy to hear this. The mixed grill is Chef Issa's signature — I'll let him know you loved it. Bring the family any night this week and ask for me at the door. — Khaled, owner",
     draftLanguage: 'en' as const,
     qualityCheck: {
       checks: [],
@@ -192,6 +203,51 @@ const REVIEWS_SEED = [
       language: 'ar' as const,
     },
   },
+
+  // ===== Follow-ups: existing authors return with new reviews =====
+  // محمد wrote an angry 1-star review 8 days ago. After we reached out, he
+  // came back and posted a follow-up — drives the customer-timeline demo.
+  {
+    externalId: 'seed_followup-mohammed',
+    authorName: 'محمد',
+    rating: 4,
+    reviewText:
+      'رجعت لكم بعد ما تواصلت معي الإدارة واعتذرت عن تجربتي السابقة. هالمرة الأكل وصل ساخن والمعاملة كانت ممتازة. أقدّر إنكم اهتميتم بملاحظتي. أرجع تاني.',
+    language: 'ar' as const,
+    sentiment: 1,
+    topics: ['food_temperature', 'service_attitude'],
+    urgency: 'low' as const,
+    daysAgo: 1,
+    draftText:
+      'يا هلا والله بمحمد، رجوعك يسعدنا أكثر من أول مرة. شكراً إنك أعطيتنا فرصة ثانية، ووعدك إنه ما يصير شي بعدها. ننتظرك دايماً. إدارة المطعم',
+    draftLanguage: 'ar' as const,
+    qualityCheck: {
+      checks: [],
+      overallScore: 90,
+      language: 'ar' as const,
+    },
+  },
+  // فهد is a regular — second 5-star review 7 days after the first.
+  {
+    externalId: 'seed_repeat-fahad',
+    authorName: 'فهد',
+    rating: 5,
+    reviewText:
+      'زيارة رابعة هالشهر. الكبسة دايم بنفس المستوى والخدمة ما تغيرت. صار مطعمنا الثابت لما نطلع نتعشى عائلياً. تسلموا.',
+    language: 'ar' as const,
+    sentiment: 2,
+    topics: ['food_quality', 'food_taste', 'staff_friendliness'],
+    urgency: 'low' as const,
+    daysAgo: 0,
+    draftText:
+      'يا هلا فهد، صرت من أهل البيت. كلامك إن مطعمنا صار خياركم الثابت العائلي شرف ما بعده شرف. حجزنا لك طاولة العيلة. ننتظركم. إدارة المطعم',
+    draftLanguage: 'ar' as const,
+    qualityCheck: {
+      checks: [],
+      overallScore: 94,
+      language: 'ar' as const,
+    },
+  },
 ];
 
 async function main() {
@@ -281,6 +337,11 @@ async function main() {
     await db.insert(drafts).values({
       reviewId: review.id,
       draftText: r.draftText,
+      // Seeded edits (where present) become the learn-from-edits source —
+      // see src/ai/owner-edits.ts. Two entries (gulf-rave + english-positive)
+      // have edits showing the owner's preferred style (more personal,
+      // names staff, less AI-generic).
+      editedText: 'editedText' in r ? r.editedText : null,
       language: r.draftLanguage,
       model: 'seed-curated',
       promptVersion: 'seed-v1',

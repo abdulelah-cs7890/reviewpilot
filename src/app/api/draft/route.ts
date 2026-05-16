@@ -29,6 +29,7 @@ import {
 } from '@/ai/drafter';
 import { qualityCheck } from '@/ai/quality';
 import { ai, MODELS, PROMPT_VERSIONS } from '@/ai/client';
+import { getOwnerEditExamples, formatEditsForPrompt } from '@/ai/owner-edits';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60; // streaming + 3 AI calls can take 30s+; default 10s won't fit
@@ -128,13 +129,18 @@ export async function POST(req: NextRequest) {
           restaurantName: restaurant.name,
         });
 
+        // Pull recent owner edits to nudge the model toward learned style.
+        const ownerEdits = await getOwnerEditExamples(restaurant.id);
+        const systemInstruction =
+          DRAFTER_SYSTEM_PROMPT_TEXT + formatEditsForPrompt(ownerEdits);
+
         let fullText = '';
         try {
           const streamResp = await ai.models.generateContentStream({
             model: MODELS.smart,
             contents: userPrompt,
             config: {
-              systemInstruction: DRAFTER_SYSTEM_PROMPT_TEXT,
+              systemInstruction,
               maxOutputTokens: 2048,
               temperature: 0.7,
             },
