@@ -15,6 +15,7 @@
  */
 
 import { cookies, headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { db, user } from '@/db';
@@ -86,7 +87,6 @@ export async function getCurrentUser() {
 export async function requireUser() {
   const result = await getCurrentUser();
   if (!result) {
-    const { redirect } = await import('next/navigation');
     redirect('/login');
   }
   return result;
