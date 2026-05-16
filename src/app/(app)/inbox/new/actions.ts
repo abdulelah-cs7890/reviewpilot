@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { db, restaurants, reviews, drafts, voiceProfiles } from '@/db';
 import { analyzeReview } from '@/ai/analyzer';
 import { draftResponse, type VoiceProfileInput } from '@/ai/drafter';
+import { qualityCheck } from '@/ai/quality';
 import { requireUser } from '@/lib/auth-utils';
 import { revalidatePath } from 'next/cache';
 
@@ -93,12 +94,27 @@ export async function createManualReview(
       restaurantName: restaurant.name,
     });
 
+    // Best-effort meta-grade. If this fails (429 / parse error), the draft
+    // still saves with null qualityCheck and the UI hides the card.
+    let qc: Awaited<ReturnType<typeof qualityCheck>> | null = null;
+    try {
+      qc = await qualityCheck({
+        reviewText: parsed.data.reviewText,
+        rating: parsed.data.rating,
+        analysis,
+        draftText: draft.draftText,
+      });
+    } catch (qcErr) {
+      console.warn('qualityCheck skipped:', qcErr instanceof Error ? qcErr.message : qcErr);
+    }
+
     await db.insert(drafts).values({
       reviewId: review.id,
       draftText: draft.draftText,
       language: draft.language,
       model: draft.model,
       promptVersion: draft.promptVersion,
+      qualityCheck: qc,
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

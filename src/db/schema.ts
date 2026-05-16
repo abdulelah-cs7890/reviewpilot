@@ -172,6 +172,16 @@ export const reviews = pgTable(
 );
 
 // ===== Drafts =====
+export type QualityCheckResult = {
+  checks: Array<{
+    issue: string;
+    addressed: boolean;
+    note?: string;
+  }>;
+  overallScore: number; // 0-100
+  language: 'ar' | 'en';
+};
+
 export const drafts = pgTable(
   'drafts',
   {
@@ -187,6 +197,9 @@ export const drafts = pgTable(
     editedText: text('edited_text'),
     finalText: text('final_text'),
     sentAt: timestamp('sent_at'),
+    // Meta-grading from src/ai/quality.ts. Null if the check failed (best-effort)
+    // or if the draft predates Phase 4 — UI hides the card in both cases.
+    qualityCheck: jsonb('quality_check').$type<QualityCheckResult>(),
   },
   (t) => ({
     reviewIdx: index('drafts_review_idx').on(t.reviewId),

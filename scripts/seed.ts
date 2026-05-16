@@ -31,6 +31,11 @@ const REVIEWS_SEED = [
     draftText:
       'يا هلا والله بفهد، كلامك عن الكبسة الخرافية والخدمة السريعة يسعدنا كثير. شهادتك وزياراتك المتكررة هالشهر شرف كبير لنا، والله يعافيك. ننتظرك دايماً.',
     draftLanguage: 'ar' as const,
+    qualityCheck: {
+      checks: [],
+      overallScore: 92,
+      language: 'ar' as const,
+    },
   },
   {
     externalId: 'seed_gulf-complaint-mild',
@@ -45,6 +50,13 @@ const REVIEWS_SEED = [
     draftText:
       'يا هلا سارة، يسعدنا إن الأكل أعجبك. وبخصوص انتظارك ٤٥ دقيقة، هذا وقت طويل فعلًا ونعتذر لك عليه. شغالين على تحسين سرعة الخدمة وإن شاء الله المرة الجاية تكون تجربتك أفضل بكثير. إدارة المطعم',
     draftLanguage: 'ar' as const,
+    qualityCheck: {
+      checks: [
+        { issue: 'الانتظار ٤٥ دقيقة قبل وصول الطلب', addressed: true },
+      ],
+      overallScore: 85,
+      language: 'ar' as const,
+    },
   },
   {
     externalId: 'seed_gulf-angry',
@@ -60,6 +72,14 @@ const REVIEWS_SEED = [
     draftText:
       'يا هلا بمحمد، نعتذر لك جداً على تجربة الأكل البارد وتعامل الكاشير اللي ما كان بالمستوى المطلوب. هذا الشيء ما يرضينا أبدًا ونحب نعتذر منك بشكل خاص ونعوضك. لو تتواصل معنا على واتساب 0500000000، نتشرف بخدمتك. إدارة المطعم',
     draftLanguage: 'ar' as const,
+    qualityCheck: {
+      checks: [
+        { issue: 'الأكل بارد', addressed: true },
+        { issue: 'تعامل الكاشير قليل الأدب عند طلب الإرجاع', addressed: true },
+      ],
+      overallScore: 88,
+      language: 'ar' as const,
+    },
   },
   {
     externalId: 'seed_english-positive',
@@ -75,6 +95,11 @@ const REVIEWS_SEED = [
     draftText:
       "Thank you, Reem! We're delighted you enjoyed the mixed grill and found our service attentive. We can't wait to welcome you and your family back soon. Restaurant management.",
     draftLanguage: 'en' as const,
+    qualityCheck: {
+      checks: [],
+      overallScore: 90,
+      language: 'en' as const,
+    },
   },
   {
     externalId: 'seed_english-complaint',
@@ -90,6 +115,15 @@ const REVIEWS_SEED = [
     draftText:
       "Ahmed, we're really sorry to hear about your recent order. A 90-minute delay, undercooked rice, and no answer when you called is definitely not the experience we want you to have. Please contact us directly so we can address this properly and make things right for you. Restaurant management.",
     draftLanguage: 'en' as const,
+    qualityCheck: {
+      checks: [
+        { issue: 'Delivery 90 minutes late', addressed: true },
+        { issue: 'Rice was undercooked', addressed: true },
+        { issue: 'Restaurant did not answer 3 calls', addressed: true },
+      ],
+      overallScore: 92,
+      language: 'en' as const,
+    },
   },
   {
     externalId: 'seed_mixed-codeswitch',
@@ -105,6 +139,17 @@ const REVIEWS_SEED = [
     draftText:
       'Hello Nora! Glad you loved the kebab and the vibes for your date night. We know the parking can be a bit tricky sometimes, but we hope to see you again soon إن شاء الله. إدارة المطعم',
     draftLanguage: 'mixed' as const,
+    qualityCheck: {
+      checks: [
+        {
+          issue: 'Parking is difficult, takes a while to find a spot',
+          addressed: true,
+          note: 'Acknowledged but no concrete fix offered',
+        },
+      ],
+      overallScore: 75,
+      language: 'en' as const,
+    },
   },
   {
     externalId: 'seed_urgent-hygiene',
@@ -120,6 +165,14 @@ const REVIEWS_SEED = [
     draftText:
       'نعتذر منك بشدة على اللي صار بخصوص الشعر في الأكل، وهالشيء أبداً ما نقبله ولا يمثلنا. كلام المدير هذا غير مقبول إطلاقاً، وبنتصرف معه فوراً. نتمنى تتواصل معنا على واتساب 0500000000 عشان نعوضك ونوضح لك الموضوع. إدارة المطعم',
     draftLanguage: 'ar' as const,
+    qualityCheck: {
+      checks: [
+        { issue: 'شعرة في الأكل', addressed: true },
+        { issue: 'المدير اعتبر هذا طبيعياً ولم يعتذر', addressed: true },
+      ],
+      overallScore: 90,
+      language: 'ar' as const,
+    },
   },
   {
     externalId: 'seed_short-positive',
@@ -133,6 +186,11 @@ const REVIEWS_SEED = [
     daysAgo: 28,
     draftText: 'الله يعافيك يا علي، كلامك عن الأكل الممتاز يسعدنا جداً. نتمنى نشوفك دايماً. إدارة المطعم',
     draftLanguage: 'ar' as const,
+    qualityCheck: {
+      checks: [],
+      overallScore: 88,
+      language: 'ar' as const,
+    },
   },
 ];
 
@@ -226,6 +284,7 @@ async function main() {
       language: r.draftLanguage,
       model: 'seed-curated',
       promptVersion: 'seed-v1',
+      qualityCheck: r.qualityCheck,
     });
     inserted += 1;
   }

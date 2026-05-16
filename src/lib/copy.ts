@@ -11,7 +11,9 @@ export const copy = {
       eyebrow: 'لمطاعم المملكة العربية السعودية',
       title: 'ردود ذكية على تقييمات Google، بلغة مطعمك.',
       sub: 'ReviewPilot يحلّل تقييمات عملائك ويصيغ ردوداً جاهزة بنغمة مطعمك السعودية — خلال ثوانٍ بدلاً من ساعات.',
-      cta: 'انضم لقائمة الانتظار',
+      demoCta: '← جرّب العرض التجريبي الآن',
+      demoCtaSub: 'مطعم تجريبي محمّل بـ ٨ تقييمات حقيقية وردود جاهزة. بدون تسجيل.',
+      cta: 'أو انضم لقائمة الانتظار',
     },
     sample: {
       heading: 'هكذا تبدو النتيجة',
@@ -66,7 +68,9 @@ export const copy = {
       eyebrow: 'For restaurants in Saudi Arabia',
       title: "Smart Google review replies, in your restaurant's voice.",
       sub: 'ReviewPilot analyzes your reviews and drafts ready-to-post responses in your Saudi voice — seconds instead of hours.',
-      cta: 'Join the waitlist',
+      demoCta: 'Try the live demo →',
+      demoCtaSub: 'A pre-loaded demo restaurant with 8 real reviews and AI-drafted replies. No signup.',
+      cta: 'Or join the waitlist',
     },
     sample: {
       heading: 'What the output looks like',

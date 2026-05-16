@@ -24,7 +24,8 @@ Reviews come in Arabic (Gulf or MSA), English, or code-switched. ReviewPilot rea
 | **Inbox** | RTL-first list, urgency-first sort, chip filters by urgency / sentiment / language / status |
 | **Detail view** | Review + AI analysis tags + editable draft + copy to clipboard + mark-as-responded |
 | **Regenerate** | Second AI call at higher temperature → alternative draft you can switch to |
-| **Manual paste** | Drop a review text in, get analysis + draft in ~6–10s |
+| **AI quality check** | Third AI call after each draft scores it against each issue the reviewer raised (✓/✗ per issue, 0–100 overall) |
+| **Manual paste** | Drop a review text in, get analysis + draft + quality check in ~10–15s |
 | **Settings** | Edit the voice profile after onboarding; new drafts pick up the new voice |
 | **Dashboard** | Sentiment-over-time line chart, topic×sentiment heatmap, urgency split, response-rate stat |
 
@@ -71,6 +72,7 @@ Every AI call goes through one file (`src/ai/client.ts`) — swap providers by c
 - **Signoff language matching.** Voice profile signoff is `"إدارة المطعم"` by default — for English responses the drafter translates it to `"Restaurant management"` rather than producing a half-Arabic-half-English close.
 - **Sample-driven prompt iteration.** [`samples/reviews.ts`](samples/reviews.ts) holds 25 realistic Saudi reviews (Gulf rave, hygiene complaint with regulator threat, delivery-app context, prayer-time issue, allergy reaction, expat writing English, formal sheikh, code-switched). `npm run ai:test` runs the engine against all of them.
 - **Retry/backoff that honors Gemini's `retryDelay`** in 429 errors, instead of fixed exponential. Cuts wasted wait time when the API tells us exactly how long.
+- **AI quality-check meta-grading.** After the drafter produces a response, a third Flash-Lite call grades the draft against each concrete issue the reviewer raised — does the draft acknowledge the cold food, the 90-minute delay, the rude staff? Stored alongside the draft and rendered inline as ✓/✗ per issue. Failure-tolerant: if the check 429s or fails to parse, the draft still saves and the UI hides the card. See `src/ai/quality.ts`.
 
 ## Run locally
 

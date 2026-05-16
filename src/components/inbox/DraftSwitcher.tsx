@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { DraftEditor } from './DraftEditor';
+import { QualityCheckCard } from './QualityCheckCard';
+import type { QualityCheckResult } from '@/db';
 
 interface Draft {
   id: string;
@@ -11,6 +13,7 @@ interface Draft {
   model: string;
   promptVersion: string;
   generatedAt: Date;
+  qualityCheck: QualityCheckResult | null;
 }
 
 export function DraftSwitcher({
@@ -57,6 +60,7 @@ export function DraftSwitcher({
         initialText={current.editedText ?? current.draftText}
         language={current.language}
       />
+      <QualityCheckCard check={current.qualityCheck} />
       <p className="text-xs text-ink-400">
         {current.model} · {current.promptVersion} ·{' '}
         {new Date(current.generatedAt).toLocaleString('ar')}

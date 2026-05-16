@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { eq, and } from 'drizzle-orm';
 import { db, restaurants, reviews, drafts, voiceProfiles } from '@/db';
 import { draftResponse, type VoiceProfileInput } from '@/ai/drafter';
+import { qualityCheck } from '@/ai/quality';
 import type { ReviewAnalysis } from '@/ai/analyzer';
 import { requireUser } from '@/lib/auth-utils';
 
@@ -76,6 +77,19 @@ export async function regenerateDraft(reviewId: string): Promise<RegenerateResul
       temperature: 0.9, // higher than default (0.7) — encourage a meaningfully different draft
     });
 
+    // Best-effort meta-grade. Failure here doesn't block the regenerate.
+    let qc: Awaited<ReturnType<typeof qualityCheck>> | null = null;
+    try {
+      qc = await qualityCheck({
+        reviewText: r.reviewText,
+        rating: r.rating,
+        analysis,
+        draftText: result.draftText,
+      });
+    } catch (qcErr) {
+      console.warn('qualityCheck skipped (regenerate):', qcErr instanceof Error ? qcErr.message : qcErr);
+    }
+
     const [inserted] = await db
       .insert(drafts)
       .values({
@@ -84,6 +98,7 @@ export async function regenerateDraft(reviewId: string): Promise<RegenerateResul
         language: result.language,
         model: result.model,
         promptVersion: result.promptVersion + '-regen',
+        qualityCheck: qc,
       })
       .returning();
 

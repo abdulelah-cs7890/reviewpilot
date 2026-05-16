@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { copy, type Locale } from '@/lib/copy';
 import { WaitlistForm } from './WaitlistForm';
+import { DemoButton } from './auth/DemoButton';
 
 export function LandingPage({ locale }: { locale: Locale }) {
   const t = copy[locale];
@@ -29,12 +30,18 @@ export function LandingPage({ locale }: { locale: Locale }) {
         <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-ink-600">
           {t.hero.sub}
         </p>
-        <a
-          href="#waitlist"
-          className="mt-8 inline-block rounded-xl bg-ink-900 px-7 py-3 font-medium text-ink-50 transition hover:bg-ink-800"
-        >
-          {t.hero.cta}
-        </a>
+        <div className="mt-8 flex flex-col items-center gap-3">
+          <div className="w-full max-w-sm">
+            <DemoButton variant="hero" label={t.hero.demoCta} />
+          </div>
+          <a
+            href="#waitlist"
+            className="text-sm text-ink-500 underline-offset-4 hover:text-ink-700 hover:underline"
+          >
+            {t.hero.cta}
+          </a>
+        </div>
+        <p className="mt-4 text-xs text-ink-400">{t.hero.demoCtaSub}</p>
       </section>
 
       {/* Sample draft preview — concrete product proof */}
