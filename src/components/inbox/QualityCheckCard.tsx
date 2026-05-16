@@ -1,3 +1,4 @@
+import { Check, X } from 'lucide-react';
 import type { QualityCheckResult } from '@/db';
 
 /**
@@ -52,7 +53,7 @@ export function QualityCheckCard({ check }: { check: QualityCheckResult | null }
                 }
                 aria-hidden="true"
               >
-                {c.addressed ? '✓' : '✗'}
+                {c.addressed ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
               </span>
               <div className="min-w-0">
                 <span className={c.addressed ? 'text-ink-800' : 'text-ink-900 font-medium'}>

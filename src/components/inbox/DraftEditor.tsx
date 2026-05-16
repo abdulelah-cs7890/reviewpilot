@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { toast } from 'sonner';
 import { saveDraftEdit, markAsResponded } from '@/app/(app)/inbox/actions';
 import { CopyButton } from './CopyButton';
 
@@ -18,12 +19,24 @@ export function DraftEditor({
   const [text, setText] = useState(initialText);
   const [saving, startSave] = useTransition();
   const [responding, startRespond] = useTransition();
-  const [savedAt, setSavedAt] = useState<number | null>(null);
   const dirty = text !== initialText;
 
   async function onSave() {
-    await saveDraftEdit(draftId, text);
-    setSavedAt(Date.now());
+    try {
+      await saveDraftEdit(draftId, text);
+      toast.success('تم حفظ التعديل');
+    } catch {
+      toast.error('تعذّر الحفظ، حاول مرة ثانية');
+    }
+  }
+
+  async function onMarkResponded() {
+    try {
+      await markAsResponded(reviewId);
+      toast.success('تم تحديث حالة التقييم');
+    } catch {
+      toast.error('تعذّر التحديث');
+    }
   }
 
   return (
@@ -48,14 +61,11 @@ export function DraftEditor({
         <button
           type="button"
           disabled={responding}
-          onClick={() => startRespond(() => markAsResponded(reviewId))}
+          onClick={() => startRespond(onMarkResponded)}
           className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
         >
           {responding ? '...' : '✓ تم الرد'}
         </button>
-        {savedAt && !dirty && (
-          <span className="text-xs text-ink-500">تم الحفظ</span>
-        )}
       </div>
     </div>
   );

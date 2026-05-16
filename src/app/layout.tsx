@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { IBM_Plex_Sans_Arabic, Inter } from 'next/font/google';
+import { Toaster } from 'sonner';
 import './globals.css';
 
 const arabic = IBM_Plex_Sans_Arabic({
@@ -25,7 +26,17 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ar" dir="rtl" className={`${arabic.variable} ${inter.variable}`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Toaster
+          richColors
+          position="top-center"
+          dir="rtl"
+          toastOptions={{
+            style: { fontFamily: 'var(--font-arabic), system-ui, sans-serif' },
+          }}
+        />
+      </body>
     </html>
   );
 }

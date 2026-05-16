@@ -8,6 +8,8 @@ import { SentimentTag } from '@/components/inbox/SentimentTag';
 import { StatusBadge } from '@/components/inbox/StatusBadge';
 import { DraftSwitcher } from '@/components/inbox/DraftSwitcher';
 import { RegenerateButton } from '@/components/inbox/RegenerateButton';
+import { StarRating } from '@/components/inbox/StarRating';
+import { AiDraftedBadge } from '@/components/AiDraftedBadge';
 
 export default async function ReviewDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -38,10 +40,7 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
       <section className="mb-6 rounded-3xl border border-ink-100 bg-white p-6 shadow-sm sm:p-8">
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <span className="text-sm font-medium text-ink-900">{review.authorName || 'مجهول'}</span>
-          <span className="text-amber-500">
-            {'★'.repeat(review.rating)}
-            <span className="text-ink-200">{'★'.repeat(5 - review.rating)}</span>
-          </span>
+          <StarRating rating={review.rating} size={18} />
           <UrgencyBadge urgency={review.urgency} />
           <SentimentTag sentiment={review.sentiment} />
           <StatusBadge status={review.status} />
@@ -67,7 +66,10 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
       {/* The draft(s) */}
       <section className="rounded-3xl border border-accent/30 bg-accent/5 p-6 shadow-sm sm:p-8">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm uppercase tracking-wider text-accent-dark">مسودة الرد</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-sm uppercase tracking-wider text-accent-dark">مسودة الرد</h2>
+            <AiDraftedBadge />
+          </div>
           <RegenerateButton reviewId={review.id} />
         </div>
         {allDrafts.length > 0 ? (

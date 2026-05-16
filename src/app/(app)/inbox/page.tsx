@@ -7,6 +7,8 @@ import { UrgencyBadge } from '@/components/inbox/UrgencyBadge';
 import { SentimentTag } from '@/components/inbox/SentimentTag';
 import { StatusBadge } from '@/components/inbox/StatusBadge';
 import { InboxFilters } from '@/components/inbox/InboxFilters';
+import { WelcomeBanner } from '@/components/inbox/WelcomeBanner';
+import { StarRating } from '@/components/inbox/StarRating';
 
 const SNIPPET_LEN = 140;
 
@@ -19,7 +21,7 @@ export default async function InboxPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { user } = await requireUser();
+  const { user, isDemo } = await requireUser();
   const restaurant = await db.query.restaurants.findFirst({
     where: eq(restaurants.userId, user.id),
   });
@@ -67,6 +69,8 @@ export default async function InboxPage({
         </Link>
       </div>
 
+      <WelcomeBanner isDemo={isDemo} />
+
       <div className="mb-6 rounded-2xl border border-ink-100 bg-white p-4">
         <InboxFilters />
       </div>
@@ -84,42 +88,47 @@ export default async function InboxPage({
         </div>
       ) : (
         <ul className="space-y-3">
-          {rows.map((r) => (
-            <li key={r.id}>
-              <Link
-                href={`/inbox/${r.id}`}
-                className="block rounded-2xl border border-ink-100 bg-white p-5 transition hover:border-ink-200 hover:shadow-sm"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-medium text-ink-900">
-                        {r.authorName || 'مجهول'}
-                      </span>
-                      <span className="text-amber-500">
-                        {'★'.repeat(r.rating)}
-                        <span className="text-ink-200">{'★'.repeat(5 - r.rating)}</span>
-                      </span>
-                      <UrgencyBadge urgency={r.urgency} />
-                      <SentimentTag sentiment={r.sentiment} />
-                      <StatusBadge status={r.status} />
+          {rows.map((r) => {
+            const urgencyBorder =
+              r.urgency === 'high'
+                ? 'border-s-4 border-s-red-400'
+                : r.urgency === 'medium'
+                  ? 'border-s-4 border-s-amber-400'
+                  : '';
+            return (
+              <li key={r.id}>
+                <Link
+                  href={`/inbox/${r.id}`}
+                  className={`block rounded-2xl border border-ink-100 bg-white p-5 transition hover:-translate-y-0.5 hover:border-ink-200 hover:shadow-md ${urgencyBorder}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-medium text-ink-900">
+                          {r.authorName || 'مجهول'}
+                        </span>
+                        <StarRating rating={r.rating} />
+                        <UrgencyBadge urgency={r.urgency} />
+                        <SentimentTag sentiment={r.sentiment} />
+                        <StatusBadge status={r.status} />
+                      </div>
+                      <p
+                        dir={r.language === 'en' ? 'ltr' : 'rtl'}
+                        className="text-ink-700"
+                      >
+                        {r.reviewText.length > SNIPPET_LEN
+                          ? r.reviewText.slice(0, SNIPPET_LEN) + '…'
+                          : r.reviewText}
+                      </p>
                     </div>
-                    <p
-                      dir={r.language === 'en' ? 'ltr' : 'rtl'}
-                      className="text-ink-700"
-                    >
-                      {r.reviewText.length > SNIPPET_LEN
-                        ? r.reviewText.slice(0, SNIPPET_LEN) + '…'
-                        : r.reviewText}
-                    </p>
+                    <time className="shrink-0 text-xs text-ink-400">
+                      {formatRelative(r.postedAt)}
+                    </time>
                   </div>
-                  <time className="shrink-0 text-xs text-ink-400">
-                    {formatRelative(r.postedAt)}
-                  </time>
-                </div>
-              </Link>
-            </li>
-          ))}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
