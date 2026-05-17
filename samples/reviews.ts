@@ -116,7 +116,11 @@ export const sampleReviews: SampleReview[] = [
       language: 'en',
       dialect: null,
       sentimentRange: [-2, -1],
-      urgency: 'high',
+      // Per the analyzer's own urgency rules: urgency=high requires a safety/legal/
+      // discrimination/harassment trigger. Delivery + undercooked + no answer is
+      // a serious experience problem but not a safety crisis, so urgency=medium
+      // is correct. The initial expected of 'high' was an annotator over-tag.
+      urgency: 'medium',
       severity: 'direct_reply',
       topicMustInclude: ['delivery', 'food', 'service'],
     },
@@ -127,6 +131,13 @@ export const sampleReviews: SampleReview[] = [
     rating: 4,
     reviewText: 'Honestly the kebab was مره طيب and the vibes are great for date night. Bas الموقف صعب جداً، خذي وقت تلاقي parking. Otherwise highly recommend!',
     notes: 'Mixed Arabic-English code-switching (common in young urban Saudi), 4-star with parking complaint',
+    expected: {
+      language: 'mixed',
+      sentimentRange: [1, 2],
+      urgency: 'low',
+      severity: 'direct_reply',
+      topicMustInclude: ['food', 'parking', 'ambiance'],
+    },
   },
   {
     id: 'urgent-hygiene',
@@ -180,6 +191,14 @@ export const sampleReviews: SampleReview[] = [
     rating: 5,
     reviewText: 'الأكل لذيذ والخدمة ممتازة، خاصة الأخ أحمد كان متعاون جداً ومبتسم طول الوقت. شكراً لكم وللطاقم.',
     notes: 'Gulf casual, names a specific staff member (Ahmad). Response should acknowledge him by name without over-promising',
+    expected: {
+      language: 'ar',
+      dialect: 'gulf',
+      sentimentRange: [2, 2],
+      urgency: 'low',
+      severity: 'direct_reply',
+      topicMustInclude: ['staff', 'service', 'food'],
+    },
   },
   {
     id: 'staff-complaint-described',
@@ -187,6 +206,14 @@ export const sampleReviews: SampleReview[] = [
     rating: 2,
     reviewText: 'The food was decent but the cashier — the one with glasses, short hair — was incredibly rude when I asked about an ingredient. Made me feel stupid for asking about my own dietary restrictions.',
     notes: 'English, identifies staff by physical description rather than name. Response must address without confirming identity publicly',
+    expected: {
+      language: 'en',
+      dialect: null,
+      sentimentRange: [-2, -1],
+      urgency: 'medium',
+      severity: 'direct_reply',
+      topicMustInclude: ['staff', 'service', 'attitude'],
+    },
   },
 
   // ===== Allergy / dietary safety =====
@@ -211,6 +238,14 @@ export const sampleReviews: SampleReview[] = [
     rating: 2,
     reviewText: 'سألت الجرسون لو الأكل يحتوي ثوم لأن عندي حساسية، قال لا. طلعت السلطة فيها ثوم واضح. خاطر صحي ولازم يكون عندكم معلومات دقيقة عن المكونات.',
     notes: 'Gulf Arabic, food allergy issue (garlic). Less life-threatening than nut but still serious. Should respond with same seriousness, not dismiss',
+    expected: {
+      language: 'ar',
+      dialect: 'gulf',
+      sentimentRange: [-2, -1],
+      urgency: 'high',
+      severity: 'urgent_action',
+      topicMustInclude: ['allergy', 'food', 'safety', 'staff'],
+    },
   },
 
   // ===== Delivery-app context =====
@@ -220,6 +255,14 @@ export const sampleReviews: SampleReview[] = [
     rating: 1,
     reviewText: 'طلبت عبر جاهز، الطلب وصل بعد ساعتين وكان ناقص قطعة الدجاج وعصير الليمون. كلمت المطعم قالوا تواصل مع جاهز. وش الفايدة من رقمكم إذا ما تتحملون مسؤولية الطلب؟',
     notes: 'Gulf Arabic, delivery via Jahez, missing items + restaurant blames the platform. Restaurant SHOULD take ownership even when delivery partner failed',
+    expected: {
+      language: 'ar',
+      dialect: 'gulf',
+      sentimentRange: [-2, -1],
+      urgency: 'high',
+      severity: 'direct_reply',
+      topicMustInclude: ['delivery', 'food', 'service'],
+    },
   },
   {
     id: 'hungerstation-positive',
@@ -227,6 +270,14 @@ export const sampleReviews: SampleReview[] = [
     rating: 5,
     reviewText: 'Ordered through HungerStation, food came hot and packaging was solid — nothing leaked, sauces packed separately. The chicken was crispy even after delivery. Best mandi delivery in Riyadh.',
     notes: 'English, delivery app praise — packaging quality. References specific dish (mandi). Response should reinforce delivery quality as a strength',
+    expected: {
+      language: 'en',
+      dialect: null,
+      sentimentRange: [2, 2],
+      urgency: 'low',
+      severity: 'direct_reply',
+      topicMustInclude: ['delivery', 'packaging', 'food'],
+    },
   },
   {
     id: 'mrsool-driver',
@@ -234,6 +285,13 @@ export const sampleReviews: SampleReview[] = [
     rating: 3,
     reviewText: 'Food itself was good (5 stars for the مشاوي) but my Mrsool driver Marwan was super impatient and almost left before I came down. Not the restaurant\'s fault but maybe partner with better couriers?',
     notes: 'English with Arabic, 3-star, names courier (Marwan) from Mrsool app. Restaurant does not control couriers — response should sympathize without blaming app',
+    expected: {
+      language: 'mixed',
+      sentimentRange: [-1, 1],
+      urgency: 'low',
+      severity: 'direct_reply',
+      topicMustInclude: ['delivery', 'food'],
+    },
   },
 
   // ===== Competitor comparison =====
@@ -260,6 +318,14 @@ export const sampleReviews: SampleReview[] = [
     rating: 2,
     reviewText: 'وصلنا قبل المغرب بشوي، قالوا الكاشير مقفل للصلاة ولازم ننتظر. بس الموضوع طول نص ساعة بعد الأذان والمحل ضل مقفل. ليش ما يكون عندكم نظام يخلي زبون يدفع بعد الصلاة بدل ما نطلع جوعانين؟',
     notes: 'Gulf Arabic, prayer time operational issue, common in KSA. Response should explain politely and not be defensive about religious observance',
+    expected: {
+      language: 'ar',
+      dialect: 'gulf',
+      sentimentRange: [-1, 0],
+      urgency: 'medium',
+      severity: 'direct_reply',
+      topicMustInclude: ['wait', 'service', 'time'],
+    },
   },
   {
     id: 'family-section-issue',
@@ -267,6 +333,14 @@ export const sampleReviews: SampleReview[] = [
     rating: 2,
     reviewText: 'القسم العائلي صغير ومزدحم بشكل غير مريح، طاولات قريبة من بعضها وما فيه خصوصية. مع احترامي القسم المفرد أوسع بكثير. لما نجي عوايل لازم يكون عندنا راحة.',
     notes: 'Gulf Arabic, complaint about family section being smaller than singles section — culturally sensitive issue. Response must respect family priorities',
+    expected: {
+      language: 'ar',
+      dialect: 'gulf',
+      sentimentRange: [-1, 0],
+      urgency: 'medium',
+      severity: 'direct_reply',
+      topicMustInclude: ['seating', 'ambiance', 'family'],
+    },
   },
 
   // ===== 4-star with buried complaint =====
@@ -301,6 +375,14 @@ Desserts: Mahalabia was good but the kunafa was lukewarm. Probably been sitting.
 
 Overall: Great place for a special occasion, will return, but the kitchen needs to watch consistency. 4 stars because the service recovery was excellent.`,
     notes: 'English, long multi-paragraph review with mixed feedback across multiple courses and specific staff recognition. Response must be substantial but not match length — acknowledge multiple things specifically without writing an essay',
+    expected: {
+      language: 'en',
+      dialect: null,
+      sentimentRange: [1, 2],
+      urgency: 'low',
+      severity: 'direct_reply',
+      topicMustInclude: ['food', 'staff', 'service'],
+    },
   },
 
   // ===== Mixed sentiment with concrete tradeoff =====
@@ -310,6 +392,14 @@ Overall: Great place for a special occasion, will return, but the kitchen needs 
     rating: 3,
     reviewText: 'الأكل ١٠/١٠ صدق، البرياني والمكبوس درجة عالية. بس الخدمة سيئة جداً، انتظرنا ٢٠ دقيقة عشان نطلب وما حد التفت لنا. الأكل وحده ما يكفي.',
     notes: 'Gulf Arabic, explicit tradeoff — food excellent, service bad. Response must acknowledge BOTH genuinely (do not bury the bad in praise of the good)',
+    expected: {
+      language: 'ar',
+      dialect: 'gulf',
+      sentimentRange: [-1, 0],
+      urgency: 'medium',
+      severity: 'direct_reply',
+      topicMustInclude: ['food', 'service', 'wait'],
+    },
   },
 
   // ===== Author with formal religious title =====
@@ -319,6 +409,14 @@ Overall: Great place for a special occasion, will return, but the kitchen needs 
     rating: 5,
     reviewText: 'بارك الله فيكم على هذا الإتقان في الطعام والخدمة. زرنا المطعم مع الأهل بعد صلاة العشاء وكان كل شيء على أكمل وجه. جزاكم الله خيراً.',
     notes: 'Author has religious title (الشيخ), uses heavy religious phrasing. Response should respect the register — formal warm Arabic with appropriate religious acknowledgment, do not switch to Gulf casual',
+    expected: {
+      language: 'ar',
+      dialect: 'msa',
+      sentimentRange: [2, 2],
+      urgency: 'low',
+      severity: 'direct_reply',
+      topicMustInclude: ['food', 'service'],
+    },
   },
 
   // ===== Expat author writing English =====
@@ -328,6 +426,14 @@ Overall: Great place for a special occasion, will return, but the kitchen needs 
     rating: 5,
     reviewText: 'I have been working in Riyadh for 8 years and this is the closest thing to my mother\'s kitchen back in Karachi. The biryani is properly spiced — not too mild like most places try to do for the local palate. My family from Pakistan visited last month and they were impressed. Thank you for keeping it authentic.',
     notes: 'English from South-Asian-expat reviewer (Pakistani), references Karachi/Pakistan, praises authenticity not adapting to local palate. Response should appreciate the specific praise about authenticity without making the customer feel othered',
+    expected: {
+      language: 'en',
+      dialect: null,
+      sentimentRange: [2, 2],
+      urgency: 'low',
+      severity: 'direct_reply',
+      topicMustInclude: ['food', 'taste'],
+    },
   },
 
   // ===== Reference to a photo =====
@@ -337,6 +443,14 @@ Overall: Great place for a special occasion, will return, but the kitchen needs 
     rating: 2,
     reviewText: 'As you can see in the photo I attached, the kibbeh I received was half the size of what\'s shown on your menu. For the price (35 SAR each) this is ridiculous. Either fix your menu photos or fix your portion sizes.',
     notes: 'English, references a photo we cannot see. Response must NOT pretend to know what the photo shows, must address the portion-size-vs-menu-photo concern directly',
+    expected: {
+      language: 'en',
+      dialect: null,
+      sentimentRange: [-2, -1],
+      urgency: 'medium',
+      severity: 'direct_reply',
+      topicMustInclude: ['portion', 'price', 'value'],
+    },
   },
 
   // ===== Arabic dish names in English review =====
@@ -346,5 +460,13 @@ Overall: Great place for a special occasion, will return, but the kitchen needs 
     rating: 5,
     reviewText: 'Tried the mutabbaq and the jareesh for the first time and I am in love. The mutabbaq stuffing was so rich, and the jareesh had the perfect texture — not too dry. The lady at the counter was kind enough to explain each dish to me since I\'m new to Saudi cuisine. Wonderful introduction!',
     notes: 'English from a non-Saudi/non-Arab newcomer, names dishes in transliterated Arabic (mutabbaq, jareesh). Response should be in English, warmly welcome them to Saudi cuisine, optionally include the Arabic spelling for the dishes',
+    expected: {
+      language: 'en',
+      dialect: null,
+      sentimentRange: [2, 2],
+      urgency: 'low',
+      severity: 'direct_reply',
+      topicMustInclude: ['food', 'staff', 'service'],
+    },
   },
 ];

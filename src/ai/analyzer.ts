@@ -110,8 +110,18 @@ Severity classifies WHAT KIND of attention is needed (independent from urgency):
 - "spam": obvious troll, competitor smear, off-topic, or auto-generated. Owner should consider
   flagging on Google instead of responding.
 
+CRITICAL — rude / impolite staff is NOT harassment.
+- "rude cashier", "the waiter was dismissive", "قليل أدب", "ما رد علي بطريقة لائقة"
+  → direct_reply (a public apology is the right response)
+- Harassment / discrimination means hostile, threatening, slur-using, refusing service based
+  on identity, or behavior that would warrant HR/legal intervention.
+  → urgent_action (requires offline contact + management investigation)
+
+Similarly: a "threat to never return" or "I'll warn everyone" is NOT a regulator threat.
+Only mentions of هيئة الغذاء / consumer authority / lawyer / police / SFDA / ministry count.
+
 Pick exactly ONE severity. When unsure between urgent_action and direct_reply, prefer urgent_action
-for any review with safety / legal / discrimination concerns.
+ONLY for the specific triggers above — not just for any angry 1-star review.
 
 Extract specific mentions:
 - dishes: actual menu items named (e.g. "كبسة", "shawarma", "مندي")

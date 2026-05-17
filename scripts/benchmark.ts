@@ -28,13 +28,16 @@ import { qualityCheck } from '../src/ai/quality';
 const DEFAULT_COUNT = 5;
 const OUTPUT_FILE = join(process.cwd(), 'benchmark-results.md');
 
-function parseArgs(argv: string[]): { count: number } {
+function parseArgs(argv: string[]): { count: number; ids: string[] | null } {
   let count = DEFAULT_COUNT;
+  let ids: string[] | null = null;
   for (const arg of argv) {
-    const m = arg.match(/^--count=(\d+)$/);
-    if (m) count = parseInt(m[1], 10);
+    const c = arg.match(/^--count=(\d+)$/);
+    if (c) count = parseInt(c[1], 10);
+    const i = arg.match(/^--ids=(.+)$/);
+    if (i) ids = i[1].split(',').map((s) => s.trim()).filter(Boolean);
   }
-  return { count };
+  return { count, ids };
 }
 
 interface FieldResult {
@@ -247,7 +250,7 @@ This file accumulates results from running the AI pipeline against the golden se
 }
 
 async function main() {
-  const { count } = parseArgs(process.argv.slice(2));
+  const { count, ids } = parseArgs(process.argv.slice(2));
 
   const candidates = sampleReviews.filter(
     (s): s is SampleReview & { expected: NonNullable<SampleReview['expected']> } =>
@@ -257,8 +260,23 @@ async function main() {
     console.error('No samples with an `expected` block. Add one to samples/reviews.ts and rerun.');
     process.exit(1);
   }
-  const selected = candidates.slice(0, count);
-  console.log(`Running benchmark on ${selected.length} sample(s)...`);
+  let selected: typeof candidates;
+  if (ids) {
+    const idSet = new Set(ids);
+    selected = candidates.filter((s) => idSet.has(s.id));
+    const missing = ids.filter((id) => !candidates.some((s) => s.id === id));
+    if (missing.length > 0) {
+      console.warn(`Warning: ids not found in samples with expected blocks: ${missing.join(', ')}`);
+    }
+    if (selected.length === 0) {
+      console.error('No matching ids. Aborting.');
+      process.exit(1);
+    }
+    console.log(`Running benchmark on ${selected.length} targeted sample(s): ${selected.map((s) => s.id).join(', ')}`);
+  } else {
+    selected = candidates.slice(0, count);
+    console.log(`Running benchmark on ${selected.length} sample(s)...`);
+  }
 
   const voiceProfile: VoiceProfileInput = {
     formality: 'warm',
