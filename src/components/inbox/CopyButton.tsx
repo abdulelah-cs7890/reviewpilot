@@ -2,8 +2,24 @@
 
 import { useState } from 'react';
 
-export function CopyButton({ text, label = 'نسخ' }: { text: string; label?: string }) {
+const LABELS = {
+  ar: { copy: 'نسخ', copied: '✓ تم النسخ' },
+  en: { copy: 'Copy', copied: '✓ Copied' },
+} as const;
+
+export function CopyButton({
+  text,
+  locale = 'ar',
+  label,
+}: {
+  text: string;
+  locale?: 'ar' | 'en';
+  /** Optional override; falls back to locale-default. */
+  label?: string;
+}) {
   const [copied, setCopied] = useState(false);
+  const t = LABELS[locale];
+  const idleLabel = label ?? t.copy;
 
   async function onClick() {
     try {
@@ -11,7 +27,6 @@ export function CopyButton({ text, label = 'نسخ' }: { text: string; label?: s
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {
-      // Clipboard blocked in some contexts; fall back to a textarea select trick
       const ta = document.createElement('textarea');
       ta.value = text;
       ta.style.position = 'fixed';
@@ -31,7 +46,7 @@ export function CopyButton({ text, label = 'نسخ' }: { text: string; label?: s
       onClick={onClick}
       className="rounded-xl bg-ink-900 px-4 py-2 text-sm font-medium text-ink-50 transition hover:bg-ink-800"
     >
-      {copied ? '✓ تم النسخ' : label}
+      {copied ? t.copied : idleLabel}
     </button>
   );
 }

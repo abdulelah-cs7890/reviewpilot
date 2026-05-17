@@ -43,11 +43,11 @@ const TOPIC_LABELS: Record<UiLocale, Record<string, string>> = {
 };
 
 const BUCKETS = [
-  { key: 'veryNeg', label: '-٢', minSent: -2, maxSent: -2 },
-  { key: 'neg', label: '-١', minSent: -1, maxSent: -1 },
-  { key: 'neutral', label: '٠', minSent: 0, maxSent: 0 },
-  { key: 'pos', label: '+١', minSent: 1, maxSent: 1 },
-  { key: 'veryPos', label: '+٢', minSent: 2, maxSent: 2 },
+  { key: 'veryNeg', label: '-2', minSent: -2, maxSent: -2 },
+  { key: 'neg', label: '-1', minSent: -1, maxSent: -1 },
+  { key: 'neutral', label: '0', minSent: 0, maxSent: 0 },
+  { key: 'pos', label: '+1', minSent: 1, maxSent: 1 },
+  { key: 'veryPos', label: '+2', minSent: 2, maxSent: 2 },
 ] as const;
 
 type BucketKey = (typeof BUCKETS)[number]['key'];
@@ -87,7 +87,7 @@ export function TopicHeatmap({
       viewBox={`0 0 ${W} ${H}`}
       preserveAspectRatio="xMidYMid meet"
       role="img"
-      aria-label="خريطة الموضوعات والمشاعر"
+      aria-label={locale === 'en' ? 'Topic × sentiment heatmap' : 'خريطة الموضوعات والمشاعر'}
       direction="ltr"
       className="block h-auto w-full"
     >

@@ -71,7 +71,7 @@ export function DraftEditor({
         className="w-full resize-y rounded-2xl border border-ink-100 bg-white p-4 text-lg leading-relaxed text-ink-900 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
       />
       <div className="flex flex-wrap items-center gap-2">
-        <CopyButton text={text} />
+        <CopyButton text={text} locale={locale} />
         <button
           type="button"
           disabled={!dirty || saving}

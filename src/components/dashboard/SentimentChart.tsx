@@ -9,7 +9,29 @@ interface Point {
   count: number;
 }
 
-export function SentimentChart({ points, days = 30 }: { points: Point[]; days?: number }) {
+const LABELS = {
+  ar: {
+    today: 'اليوم',
+    daysAgo: (n: number) => `قبل ${n}ي`,
+    aria: 'مخطط متوسط المشاعر عبر آخر ٣٠ يوم',
+  },
+  en: {
+    today: 'Today',
+    daysAgo: (n: number) => `${n}d ago`,
+    aria: 'Average sentiment over the last 30 days',
+  },
+};
+
+export function SentimentChart({
+  points,
+  days = 30,
+  locale = 'ar',
+}: {
+  points: Point[];
+  days?: number;
+  locale?: 'ar' | 'en';
+}) {
+  const t = LABELS[locale];
   // SVG geometry
   const W = 720;
   const H = 220;
@@ -35,7 +57,7 @@ export function SentimentChart({ points, days = 30 }: { points: Point[]; days?: 
       viewBox={`0 0 ${W} ${H}`}
       preserveAspectRatio="xMidYMid meet"
       role="img"
-      aria-label="مخطط متوسط المشاعر عبر آخر ٣٠ يوم"
+      aria-label={t.aria}
       direction="ltr"
       className="block h-auto w-full"
     >
@@ -62,7 +84,7 @@ export function SentimentChart({ points, days = 30 }: { points: Point[]; days?: 
         <g key={d}>
           <line x1={x(d)} x2={x(d)} y1={H - padY} y2={H - padY + 4} stroke="#a8a597" />
           <text x={x(d)} y={H - padY + 16} textAnchor="middle" fontSize="10" fill="#7a7768">
-            {d === 0 ? 'اليوم' : `قبل ${d}ي`}
+            {d === 0 ? t.today : t.daysAgo(d)}
           </text>
         </g>
       ))}

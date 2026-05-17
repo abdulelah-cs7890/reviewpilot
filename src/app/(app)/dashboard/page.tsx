@@ -147,7 +147,7 @@ export default async function DashboardPage() {
       <section className="mb-6 rounded-3xl border border-ink-100 bg-white p-6 shadow-sm">
         <h2 className="mb-1 text-sm font-medium text-ink-900">{t.sentimentTitle}</h2>
         <p className="mb-4 text-xs text-ink-500">{t.sentimentSub}</p>
-        <SentimentChart points={sentimentPoints} days={DAYS} />
+        <SentimentChart points={sentimentPoints} days={DAYS} locale={locale} />
       </section>
 
       {/* Topic trends */}
