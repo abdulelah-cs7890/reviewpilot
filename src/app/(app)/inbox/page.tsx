@@ -128,13 +128,13 @@ export default async function InboxPage({
                   aria-label={`Open review by ${r.authorName ?? 'anonymous'}`}
                   className="absolute inset-0 z-0 rounded-2xl"
                 />
-                <div className="relative z-10 flex items-start justify-between gap-3">
+                <div className="pointer-events-none relative z-10 flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="mb-2 flex flex-wrap items-center gap-2">
                       {r.authorName && authorHref ? (
                         <Link
                           href={authorHref}
-                          className="text-sm font-medium text-ink-900 hover:text-accent-dark hover:underline"
+                          className="pointer-events-auto relative z-20 text-sm font-medium text-ink-900 hover:text-accent-dark hover:underline"
                         >
                           {r.authorName}
                         </Link>
@@ -151,14 +151,14 @@ export default async function InboxPage({
                     </div>
                     <p
                       dir={r.language === 'en' ? 'ltr' : 'rtl'}
-                      className="pointer-events-none text-ink-700"
+                      className="text-ink-700"
                     >
                       {r.reviewText.length > SNIPPET_LEN
                         ? r.reviewText.slice(0, SNIPPET_LEN) + '…'
                         : r.reviewText}
                     </p>
                   </div>
-                  <time className="pointer-events-none shrink-0 text-xs text-ink-400">
+                  <time className="shrink-0 text-xs text-ink-400">
                     {formatRelative(r.postedAt, t.time)}
                   </time>
                 </div>
