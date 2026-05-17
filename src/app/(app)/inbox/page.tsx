@@ -73,7 +73,13 @@ export default async function InboxPage({
             {t.inbox.countWith(rows.length, totalCount)}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/inbox/import"
+            className="rounded-xl border border-ink-200 bg-white px-4 py-2 text-sm text-ink-700 hover:bg-ink-100"
+          >
+            {locale === 'en' ? '↑ Import CSV' : '↑ استيراد CSV'}
+          </Link>
           <Link
             href="/inbox/bulk"
             className="rounded-xl border border-ink-200 bg-white px-4 py-2 text-sm text-ink-700 hover:bg-ink-100"

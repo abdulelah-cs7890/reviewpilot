@@ -96,7 +96,13 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
           </div>
           <RegenerateButton
             reviewId={review.id}
-            label={t.detail.regenerate}
+            label={
+              allDrafts.length === 0
+                ? locale === 'en'
+                  ? '✨ Generate draft'
+                  : '✨ إنشاء المسودة'
+                : t.detail.regenerate
+            }
             pendingLabel={t.detail.regenerating}
           />
         </div>

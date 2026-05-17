@@ -72,6 +72,19 @@ Suggested flow to capture:
 | **Schedule-for-later** | Owner picks a future publish time on the detail page; Vercel cron flips the status when the time hits. Real GBP-posting is deferred. |
 | **Auto-tune voice profile** | "Suggest profile changes" button on /settings: AI reads recent edits + current profile and proposes per-field changes ("lower formality" / "add custom rule: name the chef") with rationale + confidence. Owner applies or skips per-field. |
 | **Reply policy generator** | `/insights` page: meta-AI reads 20 review→reply pairs and extracts the implicit policies you follow ("For 1-2★ delivery: apologize specifically + offer WhatsApp"). Save any policy to your voice profile to lock it into future drafts. |
+| **CSV import** | Bring real GBP reviews in. `/inbox/import` accepts a CSV (Google Takeout works), auto-detects columns, runs the analyzer per row with streaming progress. Reviews land as `pending` — owner picks which to draft replies for. |
+| **AI quality dashboard** | `/insights?tab=quality` aggregates the meta-grader's scores across all drafts: histogram, recent low-scoring drafts with the issues that were missed, top-recurring issues. Surfaces what the AI is consistently struggling with, in one view. |
+| **Benchmark suite** | `npm run benchmark` runs the analyzer + drafter + meta-grader over a golden set in `samples/reviews.ts` (12 hand-curated reviews with expected language/sentiment/urgency/severity/topics). Appends a pass/fail table to [`benchmark-results.md`](benchmark-results.md) so quality history accrues over time. |
+
+## Benchmark
+
+The AI pipeline is verified against a held-out golden set, not just by eyeballing demos.
+
+`samples/reviews.ts` contains 25 realistic Saudi-restaurant reviews. 12 of them have an `expected` block with the analyzer fields they should produce (language, dialect, sentiment range, urgency, severity, expected topic substrings). `npm run benchmark [-- --count=N]` runs the full pipeline (analyzer → drafter → meta-grader) over the first N samples and appends a pass/fail table to [`benchmark-results.md`](benchmark-results.md).
+
+Why this matters: the meta-grader's quality scores are stochastic and the analyzer's outputs vary between runs. Running the benchmark periodically catches prompt regressions before they ship.
+
+Latest results in [`benchmark-results.md`](benchmark-results.md).
 
 ## Architecture
 

@@ -18,6 +18,15 @@ export interface SampleReview {
   rating: number;
   reviewText: string;
   notes: string; // what makes this case interesting
+  expected?: {
+    language: 'ar' | 'en' | 'mixed';
+    dialect?: 'gulf' | 'msa' | 'levantine' | 'egyptian' | 'other' | null;
+    sentimentRange: [number, number]; // -2..2 inclusive
+    urgency: 'low' | 'medium' | 'high';
+    severity: 'urgent_action' | 'direct_reply' | 'monitor' | 'spam';
+    // At least one of these substrings must appear in some analyzer-emitted topic.
+    topicMustInclude?: string[];
+  };
 }
 
 export const sampleReviews: SampleReview[] = [
@@ -28,6 +37,14 @@ export const sampleReviews: SampleReview[] = [
     rating: 5,
     reviewText: 'والله من أحسن المطاعم في الرياض، الكبسة عندهم خرافية والخدمة سريعة ما تنتظر كثير. زرتهم ثلاث مرات هذي الشهر صراحة.',
     notes: 'Gulf casual, enthusiastic, mentions specific dish (كبسة) and specific praise (speed)',
+    expected: {
+      language: 'ar',
+      dialect: 'gulf',
+      sentimentRange: [2, 2],
+      urgency: 'low',
+      severity: 'direct_reply',
+      topicMustInclude: ['food', 'service', 'speed'],
+    },
   },
   {
     id: 'gulf-complaint-mild',
@@ -35,6 +52,14 @@ export const sampleReviews: SampleReview[] = [
     rating: 3,
     reviewText: 'الأكل طيب بس الانتظار طويل، جلسنا ٤٥ دقيقة قبل ما يجي الطلب. لو يحلون موضوع الوقت بيكون ممتاز.',
     notes: 'Gulf casual, 3-star with specific issue (wait time 45 min), constructive',
+    expected: {
+      language: 'ar',
+      dialect: 'gulf',
+      sentimentRange: [-1, 0],
+      urgency: 'medium',
+      severity: 'direct_reply',
+      topicMustInclude: ['wait', 'time', 'service'],
+    },
   },
   {
     id: 'gulf-angry',
@@ -42,6 +67,14 @@ export const sampleReviews: SampleReview[] = [
     rating: 1,
     reviewText: 'تجربة سيئة جداً. الأكل وصل بارد والكاشير كان قليل أدب لما طلبت ارجاع. ما أنصح أحد يجي لهم. آخر مرة أزورهم.',
     notes: 'Gulf casual, 1-star, specific complaints (cold food, rude cashier), threatens not to return',
+    expected: {
+      language: 'ar',
+      dialect: 'gulf',
+      sentimentRange: [-2, -1],
+      urgency: 'high',
+      severity: 'direct_reply',
+      topicMustInclude: ['food', 'staff', 'service'],
+    },
   },
   {
     id: 'msa-formal',
@@ -49,6 +82,14 @@ export const sampleReviews: SampleReview[] = [
     rating: 4,
     reviewText: 'مطعم محترم بأجواء راقية وطعام جيد. نقطة الملاحظة الوحيدة هي أن الأسعار مرتفعة نسبياً مقارنة بالكمية المقدمة. سأعود لتجربة أصناف أخرى.',
     notes: 'Formal MSA, 4-star, mentions price-value issue, will return',
+    expected: {
+      language: 'ar',
+      dialect: 'msa',
+      sentimentRange: [1, 2],
+      urgency: 'low',
+      severity: 'direct_reply',
+      topicMustInclude: ['price', 'value', 'portion'],
+    },
   },
   {
     id: 'english-positive',
@@ -56,6 +97,14 @@ export const sampleReviews: SampleReview[] = [
     rating: 5,
     reviewText: 'Hidden gem in Riyadh! Tried the mixed grill and it was perfectly seasoned. Service was attentive without being intrusive. Coming back with my family soon.',
     notes: 'English, enthusiastic, mentions mixed grill specifically',
+    expected: {
+      language: 'en',
+      dialect: null,
+      sentimentRange: [2, 2],
+      urgency: 'low',
+      severity: 'direct_reply',
+      topicMustInclude: ['food', 'service'],
+    },
   },
   {
     id: 'english-complaint',
@@ -63,6 +112,14 @@ export const sampleReviews: SampleReview[] = [
     rating: 2,
     reviewText: 'Ordered delivery through their app. Food arrived 90 minutes late and the rice was undercooked. Tried calling the restaurant three times, no answer. Disappointing.',
     notes: 'English, 2-star, specific issues (delivery late, undercooked, no phone answer)',
+    expected: {
+      language: 'en',
+      dialect: null,
+      sentimentRange: [-2, -1],
+      urgency: 'high',
+      severity: 'direct_reply',
+      topicMustInclude: ['delivery', 'food', 'service'],
+    },
   },
   {
     id: 'mixed-codeswitch',
@@ -77,6 +134,14 @@ export const sampleReviews: SampleReview[] = [
     rating: 1,
     reviewText: 'لقيت شعرة في الأكل والمدير ما اعتذر بل قال هذا طبيعي. هذا غير مقبول إطلاقاً. سأبلغ هيئة الغذاء والدواء.',
     notes: 'URGENT: hygiene complaint + threat to escalate to regulator. Needs careful, non-defensive response',
+    expected: {
+      language: 'ar',
+      dialect: 'gulf',
+      sentimentRange: [-2, -2],
+      urgency: 'high',
+      severity: 'urgent_action',
+      topicMustInclude: ['hygiene', 'food', 'safety'],
+    },
   },
   {
     id: 'short-positive',
@@ -84,6 +149,14 @@ export const sampleReviews: SampleReview[] = [
     rating: 5,
     reviewText: 'يعطيكم العافية، أكل ممتاز',
     notes: 'Very short Gulf positive with religious phrase. Response should be equally brief and warm',
+    expected: {
+      language: 'ar',
+      dialect: 'gulf',
+      sentimentRange: [1, 2],
+      urgency: 'low',
+      severity: 'direct_reply',
+      topicMustInclude: ['food'],
+    },
   },
   {
     id: 'vague-negative',
@@ -91,6 +164,13 @@ export const sampleReviews: SampleReview[] = [
     rating: 2,
     reviewText: 'Not good',
     notes: 'Vague 2-star with no specifics. Response should acknowledge without inventing details, and invite specifics',
+    expected: {
+      language: 'en',
+      dialect: null,
+      sentimentRange: [-2, 0],
+      urgency: 'low',
+      severity: 'monitor',
+    },
   },
 
   // ===== Staff named explicitly =====
@@ -116,6 +196,14 @@ export const sampleReviews: SampleReview[] = [
     rating: 1,
     reviewText: 'Explicitly told the waiter my son has a nut allergy. He confirmed the dish was nut-free. My son had a mild reaction within 20 minutes. We had to leave to get him medicine. This is dangerous — please train your staff properly on allergens.',
     notes: 'URGENT: child safety + allergen mislabeling. Cannot be dismissed. Response must take this very seriously, never minimize, offer direct private contact, no legal admissions in writing',
+    expected: {
+      language: 'en',
+      dialect: null,
+      sentimentRange: [-2, -2],
+      urgency: 'high',
+      severity: 'urgent_action',
+      topicMustInclude: ['allergy', 'allergen', 'safety', 'staff'],
+    },
   },
   {
     id: 'dietary-confusion-ar',
@@ -155,6 +243,14 @@ export const sampleReviews: SampleReview[] = [
     rating: 4,
     reviewText: 'كبستكم طيبة بس صراحة كبسة نجد فيلج أحسن وأرخص. الجو عندكم أرقى لكن الطعم نفسه يحتاج شغل أكثر على البهارات.',
     notes: 'Gulf Arabic, 4-star, names competitor (Najd Village) as better on food. Tricky — response must not bash competitor but also not concede',
+    expected: {
+      language: 'ar',
+      dialect: 'gulf',
+      sentimentRange: [0, 1],
+      urgency: 'low',
+      severity: 'direct_reply',
+      topicMustInclude: ['food', 'price'],
+    },
   },
 
   // ===== Prayer time / family section / women-only =====
@@ -180,6 +276,14 @@ export const sampleReviews: SampleReview[] = [
     rating: 4,
     reviewText: 'Really enjoyed our dinner — the lamb ouzi was excellent and the dessert platter was generous. Service was friendly. One small thing: the bathrooms were not as clean as the rest of the place, my friend mentioned the soap dispenser was empty. Otherwise great evening!',
     notes: 'English, 4-star (positive overall) but buried hygiene/maintenance issue. Response should address the bathroom comment specifically without being defensive — easy to gloss over but matters',
+    expected: {
+      language: 'en',
+      dialect: null,
+      sentimentRange: [1, 2],
+      urgency: 'medium',
+      severity: 'direct_reply',
+      topicMustInclude: ['hygiene', 'food', 'cleanliness'],
+    },
   },
 
   // ===== Multi-paragraph long review =====
