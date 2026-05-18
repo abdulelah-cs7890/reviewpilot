@@ -14,38 +14,30 @@
  * without the check and the UI hides the card.
  */
 
-import {
-  generateJSON,
-  MODELS,
-  PROMPT_VERSIONS,
-  Type,
-  type ResponseSchema,
-} from './client';
+import { generateJSON, MODELS, PROMPT_VERSIONS } from './client';
 import type { ReviewAnalysis } from './analyzer';
 import type { QualityCheckResult } from '@/db';
 
-const qualitySchema: ResponseSchema = {
-  type: Type.OBJECT,
+const qualitySchema = {
+  type: 'object',
   properties: {
     checks: {
-      type: Type.ARRAY,
+      type: 'array',
       items: {
-        type: Type.OBJECT,
+        type: 'object',
         properties: {
-          issue: { type: Type.STRING },
-          addressed: { type: Type.BOOLEAN },
-          note: { type: Type.STRING, nullable: true },
+          issue: { type: 'string' },
+          addressed: { type: 'boolean' },
+          note: { type: ['string', 'null'] },
         },
         required: ['issue', 'addressed'],
-        propertyOrdering: ['issue', 'addressed', 'note'],
       },
     },
-    overallScore: { type: Type.INTEGER },
-    language: { type: Type.STRING, enum: ['ar', 'en'] },
+    overallScore: { type: 'integer' },
+    language: { type: 'string', enum: ['ar', 'en'] },
   },
   required: ['checks', 'overallScore', 'language'],
-  propertyOrdering: ['checks', 'overallScore', 'language'],
-};
+} as const;
 
 const QUALITY_SYSTEM_PROMPT = `You are a quality reviewer for restaurant review responses. Given a customer review, an analysis of it, and a draft response, you decide:
 
@@ -102,7 +94,7 @@ Grade it. Return the JSON only.`;
     userPrompt,
     maxTokens: 1024,
     temperature: 0.2,
-    responseSchema: qualitySchema,
+    schema: qualitySchema,
   });
 }
 

@@ -16,12 +16,14 @@
     "screenshots": "tsx --env-file=.env.local scripts/capture-screenshots.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.96.0",
     "@google/genai": "^1.0.0",
     "@neondatabase/serverless": "^0.10.0",
     "better-auth": "^1.0.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",
+    "groq-sdk": "^1.2.0",
     "inngest": "^3.27.0",
     "lucide-react": "^0.460.0",
     "next": "^15.1.0",

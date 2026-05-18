@@ -10,7 +10,11 @@ This file accumulates results from running the AI pipeline against the golden se
 - `topics`: at least one expected substring appears in the analyzer's emitted topic list (substring, case-insensitive)
 - `quality`: 0–100 from the meta-grader (compares the generated draft against the original review)
 
-**Tolerances are deliberate** — Gemini outputs vary between runs. Sentiment ranges and topic-substring matching reduce false negatives without letting through wrong classifications.
+**Tolerances are deliberate** — model outputs vary between runs. Sentiment ranges and topic-substring matching reduce false negatives without letting through wrong classifications.
+
+**Self-grading bias caveat (Phase 11+):** when the meta-grader (`fast` tier) and the drafter (`smart` tier) use the same model — which is the case on `groq` (both = Llama 3.3 70B) and `anthropic` (both = Haiku 4.5) — the quality score is inflated because the grader is judging output from a model with identical biases. `gemini` provider splits tiers (`flash-lite` grader vs `flash` drafter) so its quality numbers are cleaner cross-checks.
+
+**Llama 3.3 70B foreign-token leak (Groq runs):** Llama is heavily multilingual and occasionally bleeds non-Arabic tokens into Arabic responses (e.g. `μας` Greek "our", `особенно` Russian "especially" mixed into Saudi-Arabic drafts). The current meta-grader prompt focuses on issue-coverage so these slip through scored high. Document the artifact; a future grader prompt could check for language purity.
 
 
 ## Run — 2026-05-17T09:27:19.346Z
@@ -108,5 +112,116 @@ This file accumulates results from running the AI pipeline against the golden se
 - `allergy-reaction` (en): Layla, we are truly shocked and deeply sorry to hear about your son's allergic reaction after our wa
 - `dietary-confusion-ar` (ar): يا أم سلطان، نأسف جداً لسماع اللي صار معاك، وفعلاً هذا خطأ غير مقبول أبداً إن المعلومة عن الثوم في ا
 - `competitor-better` (ar): أهلًا بك يا سعد، يسعدنا إن كبستنا أعجبتك وإن الجو عندنا راق لك. ملاحظتك على البهارات وصلتنا وبنشتغل 
+
+</details>
+
+## Run — 2026-05-18T08:55:42.560Z
+
+**Samples:** 1 · **Provider:** `anthropic` · **Models:** `anthropic:fast` (analyzer + quality), `anthropic:smart` (drafter)
+
+| id | lang | sentiment | urgency | severity | topics | quality |
+|---|---|---|---|---|---|---|
+| `gulf-rave-1` | ✗ FAILED | ✗ FAILED (exp 2..2) | ✗ FAILED | ✗ FAILED | — | — |
+
+**Aggregate:** language 0/1 · sentiment 0/1 · urgency 0/1 · severity 0/1
+
+<details><summary>Draft excerpts</summary>
+
+- `gulf-rave-1` (?): (skipped)
+
+</details>
+
+<details><summary>Errors</summary>
+
+- `gulf-rave-1`: analyzer: 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011Cb9kjt9UMhKYtrSLmHwSU"}
+
+</details>
+
+## Run — 2026-05-18T09:01:13.972Z
+
+**Samples:** 1 · **Provider:** `groq` · **Models:** `groq:fast` (analyzer + quality), `groq:smart` (drafter)
+
+| id | lang | sentiment | urgency | severity | topics | quality |
+|---|---|---|---|---|---|---|
+| `gulf-rave-1` | ✓ ar | ✓ 2 (exp 2..2) | ✓ low | ✓ direct_reply | ✓ | 95 |
+
+**Aggregate:** language 1/1 · sentiment 1/1 · urgency 1/1 · severity 1/1 · topics 1/1 · dialect 1/1 · quality mean 95 / min 95
+
+<details><summary>Draft excerpts</summary>
+
+- `gulf-rave-1` (ar): شكراً جزيلاً لفهد على كلماته الجميلة، يسعدنا أن نسمع أن الكبسة لذتلكم، ونتمنى لكم زيارات أكثر وخدمة 
+
+</details>
+
+## Run — 2026-05-18T09:08:40.577Z
+
+**Samples:** 25 · **Provider:** `groq` · **Models:** `groq:fast` (analyzer + quality), `groq:smart` (drafter)
+
+| id | lang | sentiment | urgency | severity | topics | quality |
+|---|---|---|---|---|---|---|
+| `gulf-rave-1` | ✓ ar | ✓ 2 (exp 2..2) | ✓ low | ✓ direct_reply | ✓ | 95 |
+| `gulf-complaint-mild` | ✓ ar | ✓ 0 (exp -1..0) | ✗ low | ✓ direct_reply | ✓ | 90 |
+| `gulf-angry` | ✓ ar | ✓ -2 (exp -2..-1) | ✗ medium | ✓ direct_reply | ✓ | 95 |
+| `msa-formal` | ✓ ar | ✓ 1 (exp 1..2) | ✓ low | ✓ direct_reply | ✓ | 90 |
+| `english-positive` | ✓ en | ✓ 2 (exp 2..2) | ✓ low | ✓ direct_reply | ✓ | 95 |
+| `english-complaint` | ✓ en | ✓ -1 (exp -2..-1) | ✓ medium | ✓ direct_reply | ✓ | 95 |
+| `mixed-codeswitch` | ✓ mixed | ✓ 1 (exp 1..2) | ✓ low | ✓ direct_reply | ✓ | 90 |
+| `urgent-hygiene` | ✓ ar | ✓ -2 (exp -2..-2) | ✓ high | ✓ urgent_action | ✓ | 90 |
+| `short-positive` | ✓ ar | ✓ 2 (exp 1..2) | ✓ low | ✓ direct_reply | ✓ | 90 |
+| `vague-negative` | ✓ en | ✓ -1 (exp -2..0) | ✓ medium | ✓ monitor | — | 40 |
+| `staff-praise-named` | ✓ ar | ✓ 2 (exp 2..2) | ✓ low | ✓ direct_reply | ✓ | 95 |
+| `staff-complaint-described` | ✓ en | ✓ -1 (exp -2..-1) | ✓ medium | ✓ direct_reply | ✓ | 95 |
+| `allergy-reaction` | ✓ en | ✓ -2 (exp -2..-2) | ✓ high | ✓ urgent_action | ✓ | 95 |
+| `dietary-confusion-ar` | ✓ ar | ✓ -2 (exp -2..-1) | ✓ high | ✓ urgent_action | ✓ | 90 |
+| `jahez-delivery-bad` | ✓ ar | ✓ -1 (exp -2..-1) | ✗ medium | ✓ direct_reply | ✓ | 95 |
+| `hungerstation-positive` | ✓ en | ✓ 2 (exp 2..2) | ✓ low | ✓ direct_reply | ✓ | 95 |
+| `mrsool-driver` | ✓ mixed | ✓ 0 (exp -1..1) | ✓ low | ✓ direct_reply | ✓ | 90 |
+| `competitor-better` | ✓ ar | ✓ 1 (exp 0..1) | ✓ low | ✓ direct_reply | ✓ | 90 |
+| `prayer-time-closed` | ✓ ar | ✓ -1 (exp -1..0) | ✓ medium | ✓ direct_reply | ✓ | 90 |
+| `family-section-issue` | ✓ ar | ✓ -1 (exp -1..0) | ✓ medium | ✓ direct_reply | ✓ | 95 |
+| `buried-complaint` | ✓ en | ✓ 1 (exp 1..2) | ✗ low | ✓ direct_reply | ✓ | 95 |
+| `long-detailed` | ✗ FAILED | ✗ FAILED (exp 1..2) | ✗ FAILED | ✗ FAILED | — | — |
+| `food-good-service-bad` | ✗ FAILED | ✗ FAILED (exp -1..0) | ✗ FAILED | ✗ FAILED | — | — |
+| `sheikh-formal` | ✗ FAILED | ✗ FAILED (exp 2..2) | ✗ FAILED | ✗ FAILED | — | — |
+| `expat-english` | ✗ FAILED | ✗ FAILED (exp 2..2) | ✗ FAILED | ✗ FAILED | — | — |
+
+**Aggregate:** language 21/25 · sentiment 21/25 · urgency 17/25 · severity 21/25 · topics 20/20 · dialect 15/19 · quality mean 90.2 / min 40
+
+<details><summary>Draft excerpts</summary>
+
+- `gulf-rave-1` (ar): شكراً جزيلاً لفهد على هذه الكلمات الجميلة، يسعدنا أن تكون خدمتنا السريعة واكبسة μας قد طاقت توقعاتك،
+- `gulf-complaint-mild` (ar): شاكرين ليكم سارة على ملاحظاتكم، نحن نحترم وقتكم ونعتذر على الانتظار الطويل، سنعمل على تحسين خدمتنا ل
+- `gulf-angry` (ar): نأسف لسماع أن تجربتك معنا كانت سيئة، особенно بخصوص الأكل البارد والكاشير الذي لم يكن على مستوى الأد
+- `msa-formal` (ar): شكراً جزيلاً د. عبدالعزيز على تقييمك وتعليقك القيم. نحن سعداء بأن أجواءنا الراقية وطعامنا الجيد قد ل
+- `english-positive` (en): Thank you, Reem, for your kind words about our mixed grill and attentive service. We're glad you enj
+- `english-complaint` (en): Sorry to hear that your delivery experience was disappointing, Ahmed. We apologize for the late arri
+- `mixed-codeswitch` (mixed): Thank you, Nora, for your kind words about our kebab and vibes! We're glad you enjoyed your date nig
+- `urgent-hygiene` (ar): إن شاء الله نعتذر عن وجود الشعرة في الأكل، ونسأل الله أن يعطينا العافية. سنحقق في هذا الأمر على الفو
+- `short-positive` (ar): شكراً لك على كلماتك الجميلة، يعطيكم العافية، نتمنى لكم زيارات متكررة إلى مطاعمنا لتجربة أطباقنا المم
+- `vague-negative` (en): Sorry to hear that we didn't meet your expectations. We'd like to make it right - please email us so
+- `staff-praise-named` (ar): شكراً جزيلاً منيرة على تقييمك الجميل، يسعدنا أن نسمع أن الأكل لذيذ والخدمة ممتازة، وخاصة تعاون الأخ 
+- `staff-complaint-described` (en): Dear Hessa, we apologize for the poor service you received from our cashier. We're truly sorry that 
+- `allergy-reaction` (en): Dear Layla, we're deeply sorry to hear that your son had a reaction to a dish at our restaurant desp
+- `dietary-confusion-ar` (ar): نأسف لما حدث معك، أم سلطان، وندعم حقك في الحصول على معلومات دقيقة عن المكونات، особенно مع存在 حساسية.
+- `jahez-delivery-bad` (ar): أنا آسف لما حدث معك في تجربتك الأخيرة معنا، خصوصاً أن الطلب كان ناقص قطعة الدجاج وعصير الليمون، ووصل
+- `hungerstation-positive` (en): Thank you, Rakan, for your kind words about our mandi and chicken - we're thrilled you enjoyed the c
+- `mrsool-driver` (mixed): شكراً لك فاطمة على ملاحظاتك. نحن سعداء لأنك استمتعت بالمشاوي، وبالنسبة لمشكلة السائق سنعمل على حلها 
+- `competitor-better` (ar): شكراً لك سعد على تقييمك، يسعدنا أنك استمتعت بجو المطعم و كبستنا. سنعمل على تحسين الطعم و البهارات في
+- `prayer-time-closed` (ar): أبو يوسف، آسف لما حدث، ونعتذر عن التأخير في فتح المحل بعد الصلاة. سنحاول جاهدين لتحسين هذا الأمر، وس
+- `family-section-issue` (ar): نشكرك على ملاحظاتك حول القسم العائلي، أم ريم. نحن نعتذر لأن القسم كان مزدحمًا وطاولات قريبة من بعضها
+- `buried-complaint` (en): Thank you, Yara, for sharing your evening with us. We're glad you enjoyed the lamb ouzi and dessert 
+- `long-detailed` (?): (skipped)
+- `food-good-service-bad` (?): (skipped)
+- `sheikh-formal` (?): (skipped)
+- `expat-english` (?): (skipped)
+
+</details>
+
+<details><summary>Errors</summary>
+
+- `long-detailed`: analyzer: 429 {"error":{"message":"Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01krx50ycafn5rzmq9vn2ygpps` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 98485, Requested 1940. Please try again in 6m7.2s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_exceeded"}}
+- `food-good-service-bad`: analyzer: 429 {"error":{"message":"Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01krx50ycafn5rzmq9vn2ygpps` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 98481, Requested 1798. Please try again in 4m1.055999999s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_exceeded"}}
+- `sheikh-formal`: analyzer: 429 {"error":{"message":"Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01krx50ycafn5rzmq9vn2ygpps` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 98477, Requested 1786. Please try again in 3m47.232s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_exceeded"}}
+- `expat-english`: analyzer: 429 {"error":{"message":"Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01krx50ycafn5rzmq9vn2ygpps` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 98473, Requested 1811. Please try again in 4m5.376s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_exceeded"}}
 
 </details>

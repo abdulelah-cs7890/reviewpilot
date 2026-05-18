@@ -11,28 +11,21 @@
  * REWRITE the original draft, not write from scratch.
  */
 
-import {
-  generateJSON,
-  MODELS,
-  PROMPT_VERSIONS,
-  Type,
-  type ResponseSchema,
-} from './client';
+import { generateJSON, MODELS, PROMPT_VERSIONS, getProviderName } from './client';
 import type { ReviewAnalysis } from './analyzer';
 import type { VoiceProfileInput, DraftResult } from './drafter';
 import { buildVoiceProfileSection } from './drafter';
 import { formatEditsForPrompt, type OwnerEditExample } from './owner-edits';
 
-const draftSchema: ResponseSchema = {
-  type: Type.OBJECT,
+const draftSchema = {
+  type: 'object',
   properties: {
-    draftText: { type: Type.STRING },
-    language: { type: Type.STRING, enum: ['ar', 'en', 'mixed'] },
-    rationale: { type: Type.STRING, nullable: true },
+    draftText: { type: 'string' },
+    language: { type: 'string', enum: ['ar', 'en', 'mixed'] },
+    rationale: { type: ['string', 'null'] },
   },
   required: ['draftText', 'language'],
-  propertyOrdering: ['draftText', 'language', 'rationale'],
-};
+} as const;
 
 const IMPROVE_SYSTEM_PROMPT = `You revise an existing Google review response according to an OWNER INSTRUCTION.
 
@@ -117,14 +110,14 @@ Rewrite the draft accordingly. Return JSON only.`;
     userPrompt,
     maxTokens: 2048,
     temperature: 0.6,
-    responseSchema: draftSchema,
+    schema: draftSchema,
   });
 
   return {
     draftText: result.draftText,
     language: result.language,
     rationale: result.rationale,
-    model: MODELS.smart,
+    model: `${getProviderName()}:${MODELS.smart}`,
     promptVersion: `${PROMPT_VERSIONS.draft}-improve-v1`,
   };
 }

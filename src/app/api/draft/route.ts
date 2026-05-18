@@ -28,7 +28,7 @@ import {
   type VoiceProfileInput,
 } from '@/ai/drafter';
 import { qualityCheck } from '@/ai/quality';
-import { ai, MODELS, PROMPT_VERSIONS } from '@/ai/client';
+import { streamText, MODELS, PROMPT_VERSIONS, getProviderName } from '@/ai/client';
 import { getOwnerEditExamples, formatEditsForPrompt } from '@/ai/owner-edits';
 
 export const runtime = 'nodejs';
@@ -137,30 +137,22 @@ export async function POST(req: NextRequest) {
 
         let fullText = '';
         try {
-          const streamResp = await ai.models.generateContentStream({
+          for await (const chunk of streamText({
             model: MODELS.smart,
-            contents: userPrompt,
-            config: {
-              systemInstruction,
-              maxOutputTokens: 2048,
-              temperature: 0.7,
-            },
-          });
-
-          for await (const chunk of streamResp) {
-            const text = chunk.text;
-            if (text) {
-              fullText += text;
-              send('chunk', { text });
+            systemPrompt: systemInstruction,
+            userPrompt,
+            maxTokens: 2048,
+            temperature: 0.7,
+          })) {
+            if (chunk.text) {
+              fullText += chunk.text;
+              send('chunk', { text: chunk.text });
             }
           }
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
-          if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
-            return fail(
-              'quota',
-              'الحصة اليومية لـ Gemini انتهت. جرّب غداً.'
-            );
+          if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('rate_limit')) {
+            return fail('quota', 'AI quota reached. Try again shortly.');
           }
           throw err;
         }
@@ -175,7 +167,7 @@ export async function POST(req: NextRequest) {
             reviewId: review.id,
             draftText,
             language: analysis.language,
-            model: MODELS.smart,
+            model: `${getProviderName()}:${MODELS.smart}`,
             promptVersion: `${PROMPT_VERSIONS.draft}-stream`,
           })
           .returning();

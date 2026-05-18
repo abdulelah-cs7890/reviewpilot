@@ -1,18 +1,16 @@
-import { generateJSON, MODELS, PROMPT_VERSIONS, Type, type ResponseSchema } from './client';
+import { generateJSON, MODELS, PROMPT_VERSIONS, getProviderName } from './client';
 import type { ReviewAnalysis } from './analyzer';
 import { formatEditsForPrompt, type OwnerEditExample } from './owner-edits';
 
-// Typed schema for the drafter's JSON output. Mirrors the parsed shape below.
-const draftSchema: ResponseSchema = {
-  type: Type.OBJECT,
+const draftSchema = {
+  type: 'object',
   properties: {
-    draftText: { type: Type.STRING },
-    language: { type: Type.STRING, enum: ['ar', 'en', 'mixed'] },
-    rationale: { type: Type.STRING, nullable: true },
+    draftText: { type: 'string' },
+    language: { type: 'string', enum: ['ar', 'en', 'mixed'] },
+    rationale: { type: ['string', 'null'] },
   },
   required: ['draftText', 'language'],
-  propertyOrdering: ['draftText', 'language', 'rationale'],
-};
+} as const;
 
 export interface VoiceProfileInput {
   formality: 'formal' | 'casual' | 'warm';
@@ -206,14 +204,14 @@ export async function draftResponse(params: {
     userPrompt,
     maxTokens: 2048,
     temperature: params.temperature ?? 0.7,
-    responseSchema: draftSchema,
+    schema: draftSchema,
   });
 
   return {
     draftText: result.draftText,
     language: result.language,
     rationale: result.rationale,
-    model: MODELS.smart,
+    model: `${getProviderName()}:${MODELS.smart}`,
     promptVersion: PROMPT_VERSIONS.draft,
   };
 }

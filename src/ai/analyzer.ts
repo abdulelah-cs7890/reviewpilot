@@ -1,46 +1,35 @@
-import { generateJSON, MODELS, PROMPT_VERSIONS, Type, type ResponseSchema } from './client';
+import { generateJSON, MODELS, PROMPT_VERSIONS } from './client';
 
-// Typed schema so Gemini enforces field names + types server-side. Mirrors
-// the ReviewAnalysis interface below.
-const analysisSchema: ResponseSchema = {
-  type: Type.OBJECT,
+// Plain JSON Schema. The provider adapter translates as needed (Gemini's
+// Type enum, Anthropic's tool input_schema).
+const analysisSchema = {
+  type: 'object',
   properties: {
-    language: { type: Type.STRING, enum: ['ar', 'en', 'mixed'] },
+    language: { type: 'string', enum: ['ar', 'en', 'mixed'] },
     dialect: {
-      type: Type.STRING,
-      enum: ['gulf', 'msa', 'levantine', 'egyptian', 'other'],
-      nullable: true,
+      type: ['string', 'null'],
+      enum: ['gulf', 'msa', 'levantine', 'egyptian', 'other', null],
     },
-    sentiment: { type: Type.INTEGER },
-    topics: { type: Type.ARRAY, items: { type: Type.STRING } },
-    urgency: { type: Type.STRING, enum: ['low', 'medium', 'high'] },
+    sentiment: { type: 'integer' },
+    topics: { type: 'array', items: { type: 'string' } },
+    urgency: { type: 'string', enum: ['low', 'medium', 'high'] },
     severity: {
-      type: Type.STRING,
+      type: 'string',
       enum: ['urgent_action', 'direct_reply', 'monitor', 'spam'],
     },
     mentions: {
-      type: Type.OBJECT,
+      type: 'object',
       properties: {
-        dishes: { type: Type.ARRAY, items: { type: Type.STRING } },
-        issues: { type: Type.ARRAY, items: { type: Type.STRING } },
-        praise: { type: Type.ARRAY, items: { type: Type.STRING } },
+        dishes: { type: 'array', items: { type: 'string' } },
+        issues: { type: 'array', items: { type: 'string' } },
+        praise: { type: 'array', items: { type: 'string' } },
       },
-      propertyOrdering: ['dishes', 'issues', 'praise'],
+      required: ['dishes', 'issues', 'praise'],
     },
-    ownerSummary: { type: Type.STRING },
+    ownerSummary: { type: 'string' },
   },
   required: ['language', 'sentiment', 'topics', 'urgency', 'severity', 'mentions', 'ownerSummary'],
-  propertyOrdering: [
-    'language',
-    'dialect',
-    'sentiment',
-    'topics',
-    'urgency',
-    'severity',
-    'mentions',
-    'ownerSummary',
-  ],
-};
+} as const;
 
 export type ReviewLanguage = 'ar' | 'en' | 'mixed';
 export type Urgency = 'low' | 'medium' | 'high';
@@ -165,7 +154,7 @@ Return the JSON analysis.`;
     userPrompt,
     maxTokens: 1024,
     temperature: 0.2,
-    responseSchema: analysisSchema,
+    schema: analysisSchema,
   });
 }
 

@@ -7,12 +7,7 @@
  * One Flash-Lite call. Output schema is strict.
  */
 
-import {
-  generateJSON,
-  MODELS,
-  Type,
-  type ResponseSchema,
-} from './client';
+import { generateJSON, MODELS } from './client';
 
 export interface PolicyExample {
   reviewText: string;
@@ -28,27 +23,25 @@ export interface ReplyPolicy {
   evidenceCount: number;
 }
 
-const policySchema: ResponseSchema = {
-  type: Type.OBJECT,
+const policySchema = {
+  type: 'object',
   properties: {
     policies: {
-      type: Type.ARRAY,
+      type: 'array',
       items: {
-        type: Type.OBJECT,
+        type: 'object',
         properties: {
-          scenario: { type: Type.STRING },
-          conditions: { type: Type.STRING },
-          actions: { type: Type.ARRAY, items: { type: Type.STRING } },
-          evidenceCount: { type: Type.INTEGER },
+          scenario: { type: 'string' },
+          conditions: { type: 'string' },
+          actions: { type: 'array', items: { type: 'string' } },
+          evidenceCount: { type: 'integer' },
         },
         required: ['scenario', 'conditions', 'actions', 'evidenceCount'],
-        propertyOrdering: ['scenario', 'conditions', 'actions', 'evidenceCount'],
       },
     },
   },
   required: ['policies'],
-  propertyOrdering: ['policies'],
-};
+} as const;
 
 const SYSTEM_PROMPT = `You analyze a restaurant owner's actual review-response history and extract the implicit POLICIES they follow when replying.
 
@@ -100,7 +93,7 @@ Extract the implicit reply policies. Return JSON only.`;
     userPrompt,
     maxTokens: 2048,
     temperature: 0.3,
-    responseSchema: policySchema,
+    schema: policySchema,
   });
 
   return result.policies;

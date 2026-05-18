@@ -6,12 +6,7 @@
  * The UI shows them as cards with Apply / Skip buttons.
  */
 
-import {
-  generateJSON,
-  MODELS,
-  Type,
-  type ResponseSchema,
-} from './client';
+import { generateJSON, MODELS } from './client';
 import type { VoiceProfileInput } from './drafter';
 import type { OwnerEditExample } from './owner-edits';
 
@@ -30,31 +25,29 @@ export interface ProfileSuggestion {
   confidence: 'high' | 'medium' | 'low';
 }
 
-const suggestionSchema: ResponseSchema = {
-  type: Type.OBJECT,
+const suggestionSchema = {
+  type: 'object',
   properties: {
     suggestions: {
-      type: Type.ARRAY,
+      type: 'array',
       items: {
-        type: Type.OBJECT,
+        type: 'object',
         properties: {
           field: {
-            type: Type.STRING,
+            type: 'string',
             enum: ['formality', 'arabicDialect', 'useReligiousPhrases', 'signoff', 'customInstructions'],
           },
-          currentValue: { type: Type.STRING },
-          proposedValue: { type: Type.STRING },
-          rationale: { type: Type.STRING },
-          confidence: { type: Type.STRING, enum: ['high', 'medium', 'low'] },
+          currentValue: { type: 'string' },
+          proposedValue: { type: 'string' },
+          rationale: { type: 'string' },
+          confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
         },
         required: ['field', 'currentValue', 'proposedValue', 'rationale', 'confidence'],
-        propertyOrdering: ['field', 'currentValue', 'proposedValue', 'rationale', 'confidence'],
       },
     },
   },
   required: ['suggestions'],
-  propertyOrdering: ['suggestions'],
-};
+} as const;
 
 const SYSTEM_PROMPT = `You are a voice-profile tuner for a Saudi restaurant's AI reply assistant. You compare:
   1. The restaurant's CURRENT voice profile settings (formality / arabic dialect / religious phrases / signoff / custom instructions)
@@ -123,7 +116,7 @@ Analyze the edits against the current profile. Propose 0–3 voice-profile chang
     userPrompt,
     maxTokens: 1500,
     temperature: 0.3,
-    responseSchema: suggestionSchema,
+    schema: suggestionSchema,
   });
 
   return result.suggestions;

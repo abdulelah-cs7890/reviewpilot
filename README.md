@@ -78,13 +78,22 @@ Suggested flow to capture:
 
 ## Benchmark
 
-The AI pipeline is verified against a held-out golden set, not just by eyeballing demos.
+The AI pipeline is verified against a held-out golden set of **25 hand-curated Saudi-restaurant reviews** (every entry in `samples/reviews.ts` has an `expected` block with target language/dialect/sentiment range/urgency/severity/topics). `npm run benchmark [-- --count=N | --ids=a,b,c]` runs the full pipeline (analyzer → drafter → meta-grader) and appends a pass/fail table to [`benchmark-results.md`](benchmark-results.md).
 
-`samples/reviews.ts` contains 25 realistic Saudi-restaurant reviews. 12 of them have an `expected` block with the analyzer fields they should produce (language, dialect, sentiment range, urgency, severity, expected topic substrings). `npm run benchmark [-- --count=N]` runs the full pipeline (analyzer → drafter → meta-grader) over the first N samples and appends a pass/fail table to [`benchmark-results.md`](benchmark-results.md).
+**Latest run (Groq Llama 3.3 70B, 21 of 25 samples before TPD limit):**
 
-Why this matters: the meta-grader's quality scores are stochastic and the analyzer's outputs vary between runs. Running the benchmark periodically catches prompt regressions before they ship.
+| Axis | Pass |
+|---|---|
+| Language detection | 21/21 |
+| Sentiment (within range) | 21/21 |
+| Urgency | 17/21 |
+| Severity | 21/21 |
+| Topic substring match | 20/20 |
+| Quality (meta-grader, mean) | 90.2 |
 
-Latest results in [`benchmark-results.md`](benchmark-results.md).
+Full per-sample table + draft excerpts in [`benchmark-results.md`](benchmark-results.md). Reproduce with `npm run benchmark`.
+
+**Cross-provider note**: Phase 10 ran 14 samples on Gemini Flash with the same prompts and saw similar pass rates plus cleaner Arabic output (no foreign-token leaks). Llama 3.3 70B occasionally bleeds Greek / Russian tokens into Arabic drafts (e.g. `كبسة μας`); the current grader doesn't penalize this. Choose the provider via `AI_PROVIDER`.
 
 ## Architecture
 
@@ -119,11 +128,12 @@ Auth path (parallel):
   Demo button → signed cookie → seeded demo user (portfolio shim)
 ```
 
-Every AI call goes through one file (`src/ai/client.ts`) — swap providers by changing that file. The two prompts (`src/ai/analyzer.ts`, `src/ai/drafter.ts`) carry all of the Saudi-specific logic: dialect detection rules, forbidden-phrase list in both English (`"We strive to..."`) and Arabic (`"نسعى دائمًا..."`, `"ملاحظاتكم القيمة"`), register-matching, signoff-language matching.
+Every AI call goes through one file (`src/ai/client.ts`) which dispatches to a provider adapter under `src/ai/providers/` — swap providers via `AI_PROVIDER=groq|gemini|anthropic`. The two prompts (`src/ai/analyzer.ts`, `src/ai/drafter.ts`) carry all of the Saudi-specific logic: dialect detection rules, forbidden-phrase list in both English (`"We strive to..."`) and Arabic (`"نسعى دائمًا..."`, `"ملاحظاتكم القيمة"`), register-matching, signoff-language matching.
 
 ## Interesting AI choices
 
-- **Two-tier model pipeline.** Flash-Lite for cheap fast analysis (sentiment / topics / urgency), Flash for drafts where quality matters. Both use Gemini's typed `responseSchema` so the model can't invent fields.
+- **Provider abstraction across three backends.** Every AI call goes through `src/ai/client.ts`, which dispatches to one of three adapters in `src/ai/providers/`: Groq (Llama 3.3 70B, default — free 100k TPD, no card), Gemini (Flash-Lite + Flash, perpetual 20 RPD/model free), or Anthropic (Haiku 4.5, needs credit). Schemas are plain JSON Schema; each adapter handles its native quirks (Gemini's `Type` enum, Anthropic's tool-use, Groq's OpenAI-style function calling). Switch with `AI_PROVIDER=groq|gemini|anthropic`. Made the cross-provider benchmark possible.
+- **Two-tier model pipeline.** `fast` tier for cheap classification (analyzer / quality / meta-AI), `smart` tier for drafts where quality matters. On Gemini those map to Flash-Lite + Flash. On Groq and Anthropic both tiers currently use the same model (Llama 3.3 70B / Haiku 4.5); could split later. The tier semantics keep call sites provider-agnostic.
 - **Reviewer-register matching, not restaurant-register matching.** A doctor writing formal MSA gets a formal MSA reply, even if the restaurant's profile says Gulf casual. Same rule for code-switched reviewers — the draft mirrors their mix.
 - **Forbidden phrases.** Both English and Arabic AI clichés are explicitly blocked (`"We strive to provide..."`, `"Thank you for taking the time..."`, `"نسعى دائمًا"`, `"ملاحظاتكم القيمة"`, `"نتطلع لخدمتكم"`). Found and added these through iteration on real sample reviews.
 - **Signoff language matching.** Voice profile signoff is `"إدارة المطعم"` by default — for English responses the drafter translates it to `"Restaurant management"` rather than producing a half-Arabic-half-English close.
@@ -144,8 +154,11 @@ npm install
 
 # Copy env template and fill in your keys
 cp .env.example .env.local
-# At minimum, set GEMINI_API_KEY (free at aistudio.google.com/apikey)
-# and DATABASE_URL (free at neon.tech)
+# At minimum: DATABASE_URL (free at neon.tech) plus ONE of the AI provider keys:
+#   GROQ_API_KEY    — recommended (free 100k TPD, no card; https://console.groq.com/keys)
+#   GEMINI_API_KEY  — fallback (free 20 RPD/model; https://aistudio.google.com/apikey)
+#   ANTHROPIC_API_KEY — needs credit balance; best Arabic quality
+# Optionally set AI_PROVIDER=groq|gemini|anthropic to force a specific one.
 
 npm run db:generate
 npm run db:migrate

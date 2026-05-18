@@ -1,139 +1,110 @@
 /**
  * Provider abstraction.
  *
- * Why this exists: we're using Gemini free tier to start. When we have paying
- * customers, we may want to switch to Claude for better Arabic quality, or
- * route different tasks to different providers (e.g. Claude for drafts,
- * Gemini for cheap classification).
+ * All AI calls in this codebase go through generateJSON or streamText below.
+ * The underlying provider (Anthropic Haiku or Gemini Flash) is selected via
+ * the AI_PROVIDER env var, or implicitly by which API key is set.
  *
- * Every AI call in this codebase goes through generateJSON or generateText
- * below. To swap providers, change ONE file.
+ * To swap providers, change AI_PROVIDER. To add a new provider, add an
+ * adapter file under src/ai/providers/ implementing ModelProvider.
  */
 
-import { GoogleGenAI, Type, type Schema } from '@google/genai';
+export type ModelTier = 'fast' | 'smart';
 
-export { Type };
-export type ResponseSchema = Schema;
-
-if (!process.env.GEMINI_API_KEY) {
-  throw new Error(
-    'GEMINI_API_KEY is not set. Get a free key at https://aistudio.google.com/apikey'
-  );
+export interface GenerateJSONOpts {
+  model: ModelTier;
+  systemPrompt: string;
+  userPrompt: string;
+  schema: object;
+  maxTokens?: number;
+  temperature?: number;
 }
 
-export const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+export interface StreamTextOpts {
+  model: ModelTier;
+  systemPrompt: string;
+  userPrompt: string;
+  maxTokens?: number;
+  temperature?: number;
+}
 
-// Bump prompt versions when prompts change materially — used for tracking
-// which drafts came from which iteration of the prompt.
+export type ProviderName = 'anthropic' | 'gemini' | 'groq';
+
+export interface ModelProvider {
+  name: ProviderName;
+  generateJSON<T>(opts: GenerateJSONOpts): Promise<T>;
+  streamText(opts: StreamTextOpts): AsyncGenerator<{ text: string }>;
+}
+
+// Bump when prompts change materially — surfaces in drafts.promptVersion so we
+// know which iteration of the prompt produced which draft.
 export const PROMPT_VERSIONS = {
   analyze: 'analyze-v1',
   draft: 'draft-v1',
   digest: 'digest-v1',
 } as const;
 
-// Two-model pipeline:
-// - Flash-Lite for cheap, high-volume analysis (sentiment/topics/urgency)
-// - Flash for response drafting where quality matters more
+// Tier names used by call sites. Each adapter resolves to its provider's
+// concrete model id.
 export const MODELS = {
-  fast: 'gemini-2.5-flash-lite',
-  smart: 'gemini-2.5-flash',
+  fast: 'fast',
+  smart: 'smart',
 } as const;
 
-export type ModelName = (typeof MODELS)[keyof typeof MODELS];
+let cachedProvider: ModelProvider | null = null;
 
-interface GenerateOptions {
-  model: ModelName;
-  systemPrompt: string;
-  userPrompt: string;
-  maxTokens?: number;
-  temperature?: number;
-  // When set on a JSON call, Gemini enforces field names + types server-side.
-  // Stronger than responseMimeType alone — the model can't invent extra fields.
-  responseSchema?: ResponseSchema;
-}
+export function getProvider(): ModelProvider {
+  if (cachedProvider) return cachedProvider;
 
-// Gemini free tier rate limits are tight (gemini-2.5-flash is 5 RPM).
-// When we hit 429, the API returns a retryDelay we should honor — much better
-// than fixed exponential backoff because it tells us the exact wait.
-const MAX_RETRIES = 4;
+  const explicit = process.env.AI_PROVIDER;
+  const haveAnthropic = !!process.env.ANTHROPIC_API_KEY;
+  const haveGemini = !!process.env.GEMINI_API_KEY;
+  const haveGroq = !!process.env.GROQ_API_KEY;
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-// Parse the retryDelay (e.g. "37s") from a 429 error. Falls back to a default.
-function retryDelayFromError(err: unknown, attempt: number): number {
-  const msg = err instanceof Error ? err.message : String(err);
-  const match = msg.match(/"retryDelay":"(\d+(?:\.\d+)?)s"/);
-  if (match) {
-    return Math.ceil(parseFloat(match[1]) * 1000) + 500; // +500ms safety buffer
+  let choice: ProviderName | null = null;
+  if (explicit === 'anthropic' || explicit === 'gemini' || explicit === 'groq') {
+    choice = explicit;
+  } else if (haveGroq) {
+    // Default to Groq when available: truly free tier, no card needed.
+    choice = 'groq';
+  } else if (haveAnthropic) {
+    choice = 'anthropic';
+  } else if (haveGemini) {
+    choice = 'gemini';
   }
-  return Math.min(60_000, 1000 * 2 ** attempt); // exponential fallback, cap 60s
+
+  if (!choice) {
+    throw new Error(
+      'No AI provider configured. Set GROQ_API_KEY (recommended), ANTHROPIC_API_KEY, or GEMINI_API_KEY.'
+    );
+  }
+
+  // Lazy-load the adapter so the unselected provider's SDK never initializes
+  // (avoids errors when only one key is set).
+  if (choice === 'anthropic') {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    cachedProvider = require('./providers/anthropic').anthropicAdapter as ModelProvider;
+  } else if (choice === 'groq') {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    cachedProvider = require('./providers/groq').groqAdapter as ModelProvider;
+  } else {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    cachedProvider = require('./providers/gemini').geminiAdapter as ModelProvider;
+  }
+  return cachedProvider;
 }
 
-function isRateLimitError(err: unknown): boolean {
-  if (err && typeof err === 'object' && 'status' in err && (err as { status: number }).status === 429) {
-    return true;
-  }
-  const msg = err instanceof Error ? err.message : String(err);
-  return msg.includes('RESOURCE_EXHAUSTED') || msg.includes('"code":429');
+export function generateJSON<T>(opts: GenerateJSONOpts): Promise<T> {
+  return getProvider().generateJSON<T>(opts);
 }
 
-async function callGemini(opts: GenerateOptions, asJSON: boolean): Promise<string> {
-  let lastErr: unknown;
-  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-    try {
-      const response = await ai.models.generateContent({
-        model: opts.model,
-        contents: opts.userPrompt,
-        config: {
-          systemInstruction: opts.systemPrompt,
-          maxOutputTokens: opts.maxTokens ?? 2048,
-          temperature: opts.temperature ?? (asJSON ? 0.3 : 0.7),
-          ...(asJSON
-            ? {
-                responseMimeType: 'application/json',
-                ...(opts.responseSchema ? { responseSchema: opts.responseSchema } : {}),
-              }
-            : {}),
-        },
-      });
-      const text = response.text;
-      if (!text) {
-        throw new Error('Empty response from model');
-      }
-      return text;
-    } catch (err) {
-      lastErr = err;
-      if (!isRateLimitError(err) || attempt === MAX_RETRIES - 1) {
-        throw err;
-      }
-      const delay = retryDelayFromError(err, attempt);
-      console.warn(`   ⏳ rate limited, waiting ${(delay / 1000).toFixed(1)}s before retry (attempt ${attempt + 1}/${MAX_RETRIES})`);
-      await sleep(delay);
-    }
-  }
-  throw lastErr;
+export function streamText(opts: StreamTextOpts): AsyncGenerator<{ text: string }> {
+  return getProvider().streamText(opts);
 }
 
 /**
- * Generate plain text from the model.
+ * Returns the active provider's name. Used by the benchmark renderer.
  */
-export async function generateText(opts: GenerateOptions): Promise<string> {
-  return callGemini(opts, false);
-}
-
-/**
- * Generate and parse a JSON response. The system prompt MUST instruct the
- * model to output JSON only. responseMimeType=application/json forces this
- * server-side. We still strip markdown fences defensively.
- */
-export async function generateJSON<T>(opts: GenerateOptions): Promise<T> {
-  const text = await callGemini(opts, true);
-  const cleaned = text.trim().replace(/^```(?:json)?\s*|\s*```$/g, '');
-  try {
-    return JSON.parse(cleaned) as T;
-  } catch (err) {
-    throw new Error(`Failed to parse JSON output: ${cleaned.slice(0, 200)}...`);
-  }
+export function getProviderName(): ProviderName {
+  return getProvider().name;
 }

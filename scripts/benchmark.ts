@@ -24,6 +24,7 @@ import { sampleReviews, type SampleReview } from '../samples/reviews';
 import { analyzeReview } from '../src/ai/analyzer';
 import { draftResponse, type VoiceProfileInput } from '../src/ai/drafter';
 import { qualityCheck } from '../src/ai/quality';
+import { getProviderName } from '../src/ai/client';
 
 const DEFAULT_COUNT = 5;
 const OUTPUT_FILE = join(process.cwd(), 'benchmark-results.md');
@@ -188,7 +189,8 @@ function renderRunMarkdown(results: SampleResult[], modelInfo: { fast: string; s
   lines.push('');
   lines.push(`## Run — ${now}`);
   lines.push('');
-  lines.push(`**Samples:** ${n} · **Models:** \`${modelInfo.fast}\` (analyzer + quality), \`${modelInfo.smart}\` (drafter)`);
+  const provider = getProviderName();
+  lines.push(`**Samples:** ${n} · **Provider:** \`${provider}\` · **Models:** \`${modelInfo.fast}\` (analyzer + quality), \`${modelInfo.smart}\` (drafter)`);
   lines.push('');
   lines.push('| id | lang | sentiment | urgency | severity | topics | quality |');
   lines.push('|---|---|---|---|---|---|---|');
@@ -345,9 +347,10 @@ async function main() {
 
     if (analysis) {
       const scored = scoreSample(sample, analysis);
-      // The analyzer module imports MODELS; we capture from the drafter's return for smart,
-      // and infer fast from the analyzer (it always uses MODELS.fast).
-      modelFast = 'gemini-2.5-flash-lite';
+      // Drafter returns its concrete model identifier in `provider:tier` notation
+      // (see drafter.ts). Analyzer's model tier is 'fast' in this provider.
+      const providerName = getProviderName();
+      modelFast = `${providerName}:fast`;
       results.push({
         ...scored,
         qualityScore: quality,
@@ -379,8 +382,8 @@ async function main() {
 
   ensureHeader();
   const md = renderRunMarkdown(results, {
-    fast: modelFast || 'gemini-2.5-flash-lite',
-    smart: modelSmart || 'gemini-2.5-flash',
+    fast: modelFast || `${getProviderName()}:fast`,
+    smart: modelSmart || `${getProviderName()}:smart`,
   });
   appendFileSync(OUTPUT_FILE, md, 'utf8');
   console.log(`\n✓ Appended to ${OUTPUT_FILE}`);
