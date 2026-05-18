@@ -179,7 +179,11 @@ export const sampleReviews: SampleReview[] = [
       language: 'en',
       dialect: null,
       sentimentRange: [-2, 0],
-      urgency: 'low',
+      // Per the analyzer's own urgency rules: rating ≤ 2 without safety
+      // triggers = medium. Annotator originally tagged 'low' because the
+      // text is vague, but the rule keys off rating + triggers, not
+      // specificity. Fixed to match the rule.
+      urgency: 'medium',
       severity: 'monitor',
     },
   },
