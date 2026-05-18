@@ -74,41 +74,45 @@ async function main() {
 
   const browser = await chromium.launch();
 
-  // Desktop context with demo cookie set
-  const desktop = await browser.newContext({
-    viewport: { width: 1280, height: 900 },
-    deviceScaleFactor: 2, // retina-quality output
-    locale: 'ar-SA',
-  });
-  await desktop.addCookies([
+  // Cookies shared by both contexts: demo session + force English UI for
+  // the README's primary audience. The live demo still defaults to Arabic;
+  // visitors can toggle via the language button.
+  const sharedCookies = [
     {
       name: 'reviewpilot_demo',
       value: cookieValue,
       domain: 'localhost',
       path: '/',
       httpOnly: true,
-      sameSite: 'Lax',
+      sameSite: 'Lax' as const,
     },
-  ]);
+    {
+      name: 'reviewpilot_locale',
+      value: 'en',
+      domain: 'localhost',
+      path: '/',
+      httpOnly: false,
+      sameSite: 'Lax' as const,
+    },
+  ];
+
+  // Desktop context with demo cookie set
+  const desktop = await browser.newContext({
+    viewport: { width: 1280, height: 900 },
+    deviceScaleFactor: 2, // retina-quality output
+    locale: 'en-US',
+  });
+  await desktop.addCookies(sharedCookies);
 
   // Mobile context for the mobile screenshot
   const mobile = await browser.newContext({
     viewport: { width: 390, height: 844 },
     deviceScaleFactor: 3,
-    locale: 'ar-SA',
+    locale: 'en-US',
     userAgent:
       'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
   });
-  await mobile.addCookies([
-    {
-      name: 'reviewpilot_demo',
-      value: cookieValue,
-      domain: 'localhost',
-      path: '/',
-      httpOnly: true,
-      sameSite: 'Lax',
-    },
-  ]);
+  await mobile.addCookies(sharedCookies);
 
   // Helper: navigate, wait for network idle + fonts, capture
   async function shoot(context: typeof desktop, path: string, name: string, full = true) {
@@ -127,6 +131,9 @@ async function main() {
   await shoot(desktop, `/inbox/${detailId}`, 'detail');
   await shoot(desktop, '/dashboard', 'dashboard');
   await shoot(desktop, '/settings', 'settings');
+  await shoot(desktop, '/inbox/import', 'import');
+  await shoot(desktop, '/insights', 'insights-policies');
+  await shoot(desktop, '/insights?tab=quality', 'insights-quality');
   await shoot(mobile, '/inbox', 'mobile-inbox');
 
   await browser.close();
