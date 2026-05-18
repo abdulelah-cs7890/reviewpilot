@@ -75,10 +75,16 @@ export function ManualReviewForm() {
       <SubmitButton />
 
       {state.status === 'error' && (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{state.message}</p>
+        <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+          {state.reason === 'validation' ? 'تحقق من البيانات' : 'حدث خطأ. حاول لاحقاً.'}
+        </p>
       )}
       {state.status === 'quota' && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">{state.message}</p>
+        <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          {state.isDemo
+            ? 'الحصة اليومية المجانية انتهت. جرّب التقييمات المحمّلة مسبقاً.'
+            : 'الحصة اليومية لـ AI انتهت. جرّب لاحقاً.'}
+        </p>
       )}
     </form>
   );

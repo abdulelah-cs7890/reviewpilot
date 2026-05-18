@@ -148,12 +148,12 @@ export function BulkPasteForm({ locale = 'ar' }: { locale?: 'ar' | 'en' }) {
           update({ phase: 'done', reviewId });
           outcome = 'ok';
         } else if (eventType === 'error') {
-          const err = payload as { reason: string; message: string };
+          const err = payload as { reason: 'quota' | 'error' };
           if (err.reason === 'quota') {
             update({ phase: 'quota' });
             outcome = 'quota';
           } else {
-            update({ phase: 'error', message: err.message });
+            update({ phase: 'error', message: t.phaseError });
             outcome = 'error';
           }
         }

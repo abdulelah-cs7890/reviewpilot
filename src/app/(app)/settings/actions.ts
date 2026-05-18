@@ -15,7 +15,7 @@ const schema = z.object({
 
 export type SettingsState =
   | { status: 'idle' }
-  | { status: 'error'; message: string }
+  | { status: 'error'; reason: 'no-restaurant' | 'validation' }
   | { status: 'saved' };
 
 export async function updateVoiceProfile(
@@ -28,7 +28,7 @@ export async function updateVoiceProfile(
     where: eq(restaurants.userId, user.id),
   });
   if (!restaurant) {
-    return { status: 'error', message: 'لم يتم العثور على مطعم. أكمل التهيئة أولاً.' };
+    return { status: 'error', reason: 'no-restaurant' };
   }
 
   const parsed = schema.safeParse({
@@ -39,7 +39,7 @@ export async function updateVoiceProfile(
   });
 
   if (!parsed.success) {
-    return { status: 'error', message: 'تحقق من البيانات' };
+    return { status: 'error', reason: 'validation' };
   }
 
   await db

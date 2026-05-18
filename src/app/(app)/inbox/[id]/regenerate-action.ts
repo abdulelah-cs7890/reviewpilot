@@ -11,7 +11,7 @@ import { requireUser } from '@/lib/auth-utils';
 
 export type RegenerateResult =
   | { ok: true; draftId: string }
-  | { ok: false; reason: 'quota' | 'error'; message: string };
+  | { ok: false; reason: 'not-found' | 'quota' | 'error' };
 
 export async function regenerateDraft(reviewId: string): Promise<RegenerateResult> {
   const { user } = await requireUser();
@@ -28,7 +28,7 @@ export async function regenerateDraft(reviewId: string): Promise<RegenerateResul
     .limit(1);
 
   if (review.length === 0) {
-    return { ok: false, reason: 'error', message: 'لم يتم العثور على التقييم' };
+    return { ok: false, reason: 'not-found' };
   }
 
   const { review: r, restaurant } = review[0];
@@ -110,14 +110,10 @@ export async function regenerateDraft(reviewId: string): Promise<RegenerateResul
     return { ok: true, draftId: inserted.id };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
-      return {
-        ok: false,
-        reason: 'quota',
-        message: 'الحصة اليومية لـ Gemini انتهت. جرّب غداً.',
-      };
+    if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('rate_limit')) {
+      return { ok: false, reason: 'quota' };
     }
     console.error('regenerateDraft failed:', err);
-    return { ok: false, reason: 'error', message: 'تعذّر إنشاء صياغة جديدة. حاول لاحقاً.' };
+    return { ok: false, reason: 'error' };
   }
 }

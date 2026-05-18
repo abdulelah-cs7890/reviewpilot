@@ -52,7 +52,7 @@ export function OnboardingForm() {
       </button>
 
       {state.status === 'error' && (
-        <p className="text-sm text-red-600">{state.message}</p>
+        <p className="text-sm text-red-600">تحقق من البيانات</p>
       )}
     </form>
   );

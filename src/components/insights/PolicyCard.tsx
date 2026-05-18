@@ -15,6 +15,7 @@ interface Labels {
   saving: string;
   saved: string;
   toastSaved: string;
+  saveError: string;
 }
 
 const LABELS: Record<'ar' | 'en', Labels> = {
@@ -27,6 +28,7 @@ const LABELS: Record<'ar' | 'en', Labels> = {
     saving: 'جارٍ الحفظ...',
     saved: 'محفوظ',
     toastSaved: 'تمت إضافة السياسة',
+    saveError: 'تعذّر الحفظ. تأكد من ملف الصوت.',
   },
   en: {
     scenarioLabel: 'Scenario',
@@ -37,6 +39,7 @@ const LABELS: Record<'ar' | 'en', Labels> = {
     saving: 'Saving...',
     saved: 'Saved',
     toastSaved: 'Policy added to voice profile',
+    saveError: "Couldn't save. Make sure your voice profile exists.",
   },
 };
 
@@ -58,7 +61,7 @@ export function PolicyCard({
     startTransition(async () => {
       const res = await savePolicyToProfile(policy);
       if (res.ok) toast.success(t.toastSaved);
-      else toast.error(res.message ?? 'Failed');
+      else toast.error(t.saveError);
     });
   }
 

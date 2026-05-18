@@ -13,12 +13,24 @@ const LABELS = {
     generating: 'جارٍ التحليل...',
     nothingYet: 'اضغط الزر لتحليل سجل ردودك.',
     none: 'ما قدرنا نستخرج سياسات. جرّب بعد إضافة تقييمات وردود أكثر.',
+    errors: {
+      'no-restaurant': 'لم يتم العثور على مطعم.',
+      'insufficient-data': 'تحتاج تقييمين على الأقل مع ردود لتوليد السياسات.',
+      quota: 'الحصة اليومية لـ AI انتهت. جرّب لاحقاً.',
+      error: 'تعذّر توليد السياسات. حاول لاحقاً.',
+    },
   },
   en: {
     cta: '✨ Generate reply policies',
     generating: 'Analyzing...',
     nothingYet: 'Click the button to analyze your reply history.',
     none: "Couldn't extract policies yet. Try after more reviews + replies are added.",
+    errors: {
+      'no-restaurant': 'No restaurant found.',
+      'insufficient-data': 'Need at least 2 reviews with drafts to generate policies.',
+      quota: 'Daily AI quota reached. Try again later.',
+      error: "Couldn't generate policies. Try again later.",
+    },
   },
 };
 
@@ -39,8 +51,10 @@ export function InsightsGenerator({
       if (res.ok) {
         setPolicies(res.policies);
         if (res.policies.length === 0) toast.info(t.none);
+      } else if (res.reason === 'quota') {
+        toast.warning(t.errors[res.reason]);
       } else {
-        toast.error(res.message);
+        toast.error(t.errors[res.reason]);
       }
     });
   }

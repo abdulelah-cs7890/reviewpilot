@@ -23,6 +23,10 @@ interface Labels {
   applied: string;
   none: string;
   noEdits: string;
+  quotaError: string;
+  genericError: string;
+  noProfileError: string;
+  invalidValueError: string;
 }
 
 const LABELS: Record<'ar' | 'en', Labels> = {
@@ -40,6 +44,10 @@ const LABELS: Record<'ar' | 'en', Labels> = {
     applied: 'تم التطبيق',
     none: 'ما فيه اقتراحات حالياً. عدّل بعض المسودات وحاول ثانية.',
     noEdits: 'تحتاج تعدّل مسودة على الأقل قبل ما نقدر نقترح تحسينات.',
+    quotaError: 'الحصة اليومية لـ AI انتهت. جرّب لاحقاً.',
+    genericError: 'تعذّر إنشاء الاقتراحات. حاول لاحقاً.',
+    noProfileError: 'لم يتم العثور على ملف الصوت.',
+    invalidValueError: 'قيمة غير صالحة.',
   },
   en: {
     heading: 'Voice profile suggestions',
@@ -55,6 +63,10 @@ const LABELS: Record<'ar' | 'en', Labels> = {
     applied: 'Applied',
     none: "No suggestions right now. Edit a few drafts and try again.",
     noEdits: 'Edit at least one draft so the AI has something to learn from.',
+    quotaError: 'Daily AI quota reached. Try again later.',
+    genericError: "Couldn't generate suggestions. Try again later.",
+    noProfileError: 'No voice profile found.',
+    invalidValueError: 'Invalid value.',
   },
 };
 
@@ -94,9 +106,11 @@ export function ProfileTunerPanel({ locale = 'ar' }: { locale?: 'ar' | 'en' }) {
       } else if (res.reason === 'no-edits') {
         toast.info(t.noEdits);
       } else if (res.reason === 'quota') {
-        toast.warning(res.message);
+        toast.warning(t.quotaError);
+      } else if (res.reason === 'no-profile') {
+        toast.error(t.noProfileError);
       } else {
-        toast.error(res.message);
+        toast.error(t.genericError);
       }
     });
   }
@@ -107,8 +121,10 @@ export function ProfileTunerPanel({ locale = 'ar' }: { locale?: 'ar' | 'en' }) {
       if (res.ok) {
         setApplied((prev) => new Set(prev).add(i));
         toast.success(t.applied);
+      } else if (res.reason === 'no-profile') {
+        toast.error(t.noProfileError);
       } else {
-        toast.error(res.message ?? 'Failed');
+        toast.error(t.invalidValueError);
       }
     });
   }

@@ -8,7 +8,7 @@ const analysisSchema = {
     language: { type: 'string', enum: ['ar', 'en', 'mixed'] },
     dialect: {
       type: ['string', 'null'],
-      enum: ['gulf', 'msa', 'levantine', 'egyptian', 'other', null],
+      enum: ['gulf', 'msa', 'levantine', 'egyptian', 'other'],
     },
     sentiment: { type: 'integer' },
     topics: { type: 'array', items: { type: 'string' } },

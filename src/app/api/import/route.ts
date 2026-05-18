@@ -109,10 +109,9 @@ export async function POST(req: NextRequest) {
           send('progress', { index: i, reviewId: row.id, ok: true });
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
-          if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+          if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('rate_limit')) {
             send('error', {
               reason: 'quota',
-              message: 'Daily Gemini quota exhausted. Remaining rows kept as pending.',
               analyzed,
               failed,
               remaining: inserted.length - i,

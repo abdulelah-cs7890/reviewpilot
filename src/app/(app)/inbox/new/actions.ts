@@ -18,8 +18,8 @@ const schema = z.object({
 
 export type ManualReviewState =
   | { status: 'idle' }
-  | { status: 'error'; message: string }
-  | { status: 'quota'; message: string };
+  | { status: 'error'; reason: 'validation' | 'ai-failed' }
+  | { status: 'quota'; isDemo: boolean };
 
 export async function createManualReview(
   _prev: ManualReviewState,
@@ -38,7 +38,7 @@ export async function createManualReview(
     reviewText: formData.get('reviewText'),
   });
   if (!parsed.success) {
-    return { status: 'error', message: 'تحقق من البيانات' };
+    return { status: 'error', reason: 'validation' };
   }
 
   // Insert review (pending analysis)
@@ -123,16 +123,13 @@ export async function createManualReview(
     if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
       return {
         status: 'quota',
-        message:
-          isDemo
-            ? 'الحصة اليومية المجانية انتهت لليوم. جرّب التقييمات المحمّلة مسبقاً في الصندوق، أو ارجع غداً.'
-            : 'الحصة اليومية المجانية لـ Gemini انتهت. جرّب غداً أو أضف وسيلة دفع لرفع الحد.',
+        isDemo,
       };
     }
     console.error('createManualReview AI step failed:', err);
     return {
       status: 'error',
-      message: 'حدث خطأ في إنشاء المسودة. التقييم محفوظ، حاول إعادة المعالجة لاحقاً.',
+      reason: 'ai-failed',
     };
   }
 

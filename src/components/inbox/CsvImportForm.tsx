@@ -203,14 +203,14 @@ export function CsvImportForm({ locale = 'ar' }: { locale?: 'ar' | 'en' }) {
         } else if (eventType === 'done') {
           setCompleted(data as { analyzed: number; failed: number; total: number });
         } else if (eventType === 'error') {
-          const err = data as { reason: string; message: string };
+          const err = data as { reason: 'quota' | 'error' };
           if (err.reason === 'quota') {
             toast.warning(t.quotaToast);
             setStatuses((prev) =>
               prev.map((s) => (s.phase === 'queued' || s.phase === 'analyzing' ? { phase: 'quota' } : s))
             );
           } else {
-            toast.error(err.message);
+            toast.error(locale === 'en' ? 'Import failed. Try again.' : 'فشل الاستيراد. حاول لاحقاً.');
           }
         } else if (eventType === 'inserted') {
           // Kick off animation on row 0

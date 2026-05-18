@@ -19,15 +19,31 @@ export function SettingsForm({
 
   const labels =
     locale === 'en'
-      ? { saved: 'Settings saved', save: 'Save changes', saving: 'Saving...' }
-      : { saved: 'تم حفظ الإعدادات', save: 'حفظ التغييرات', saving: 'جارٍ الحفظ...' };
+      ? {
+          saved: 'Settings saved',
+          save: 'Save changes',
+          saving: 'Saving...',
+          errors: {
+            'no-restaurant': 'No restaurant found. Complete onboarding first.',
+            validation: 'Please check the form fields.',
+          },
+        }
+      : {
+          saved: 'تم حفظ الإعدادات',
+          save: 'حفظ التغييرات',
+          saving: 'جارٍ الحفظ...',
+          errors: {
+            'no-restaurant': 'لم يتم العثور على مطعم. أكمل التهيئة أولاً.',
+            validation: 'تحقق من البيانات',
+          },
+        };
 
   useEffect(() => {
     if (state.status === lastStatus.current) return;
     lastStatus.current = state.status;
     if (state.status === 'saved') toast.success(labels.saved);
-    if (state.status === 'error') toast.error(state.message);
-  }, [state, labels.saved]);
+    if (state.status === 'error') toast.error(labels.errors[state.reason]);
+  }, [state, labels]);
 
   return (
     <form action={action} className="space-y-6">

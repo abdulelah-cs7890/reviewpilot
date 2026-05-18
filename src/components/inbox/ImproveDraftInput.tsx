@@ -5,6 +5,10 @@ import { toast } from 'sonner';
 import { Wand2 } from 'lucide-react';
 import { improveDraftAction } from '@/app/(app)/inbox/[id]/improve-action';
 
+import type { ImproveResult } from '@/app/(app)/inbox/[id]/improve-action';
+
+type Reason = Extract<ImproveResult, { ok: false }>['reason'];
+
 interface Labels {
   heading: string;
   placeholder: string;
@@ -12,6 +16,7 @@ interface Labels {
   applying: string;
   examples: string[];
   successToast: string;
+  errors: Record<Reason, string>;
 }
 
 const LABELS: Record<'ar' | 'en', Labels> = {
@@ -22,6 +27,14 @@ const LABELS: Record<'ar' | 'en', Labels> = {
     applying: 'جارٍ التطبيق...',
     examples: ['اجعلها أقصر', 'أكثر اعتذاراً', 'أضف عرض زيارة قادمة'],
     successToast: 'صياغة محسّنة جاهزة',
+    errors: {
+      empty: 'اكتب تعليمة أولاً',
+      'too-long': 'التعليمة طويلة جداً (الحد ٤٠٠ حرف)',
+      'not-found': 'لم يتم العثور على التقييم',
+      'no-draft': 'لا توجد مسودة لتحسينها',
+      quota: 'الحصة اليومية لـ AI انتهت. جرّب لاحقاً.',
+      error: 'تعذّر تطبيق التعليمة. حاول لاحقاً.',
+    },
   },
   en: {
     heading: 'Improve this draft',
@@ -30,6 +43,14 @@ const LABELS: Record<'ar' | 'en', Labels> = {
     applying: 'Applying...',
     examples: ['Make it shorter', 'More apologetic', 'Offer a return visit'],
     successToast: 'Improved draft is ready',
+    errors: {
+      empty: 'Type an instruction first',
+      'too-long': 'Instruction too long (max 400 chars)',
+      'not-found': 'Review not found',
+      'no-draft': 'No draft to improve yet',
+      quota: 'Daily AI quota reached. Try again later.',
+      error: "Couldn't apply the instruction. Try again later.",
+    },
   },
 };
 
@@ -53,11 +74,11 @@ export function ImproveDraftInput({
         toast.success(t.successToast);
         setInstruction('');
       } else if (result.reason === 'quota') {
-        toast.warning(result.message);
+        toast.warning(t.errors[result.reason]);
       } else if (result.reason === 'empty') {
-        toast.info(result.message);
+        toast.info(t.errors[result.reason]);
       } else {
-        toast.error(result.message);
+        toast.error(t.errors[result.reason]);
       }
     });
   }

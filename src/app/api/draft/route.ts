@@ -82,8 +82,8 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      function fail(reason: 'quota' | 'error', message: string) {
-        send('error', { reason, message });
+      function fail(reason: 'quota' | 'error', hint?: string) {
+        send('error', { reason, hint });
         controller.close();
       }
 
@@ -152,7 +152,7 @@ export async function POST(req: NextRequest) {
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
           if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('rate_limit')) {
-            return fail('quota', 'AI quota reached. Try again shortly.');
+            return fail('quota', 'drafter-stream');
           }
           throw err;
         }
@@ -203,10 +203,10 @@ export async function POST(req: NextRequest) {
       } catch (err) {
         console.error('draft stream failed:', err);
         const msg = err instanceof Error ? err.message : String(err);
-        if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
-          fail('quota', 'الحصة اليومية لـ Gemini انتهت. جرّب غداً.');
+        if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('rate_limit')) {
+          fail('quota', 'analyzer-or-drafter');
         } else {
-          fail('error', 'تعذّر إنشاء المسودة. حاول لاحقاً.');
+          fail('error', 'draft-flow');
         }
       }
     },

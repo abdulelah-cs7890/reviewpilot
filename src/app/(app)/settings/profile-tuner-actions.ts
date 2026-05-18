@@ -10,7 +10,11 @@ import type { VoiceProfileInput } from '@/ai/drafter';
 
 export type RequestSuggestionsResult =
   | { ok: true; suggestions: ProfileSuggestion[] }
-  | { ok: false; reason: 'no-edits' | 'quota' | 'error'; message: string };
+  | { ok: false; reason: 'no-profile' | 'no-edits' | 'quota' | 'error' };
+
+export type ApplyProfileChangeResult =
+  | { ok: true }
+  | { ok: false; reason: 'no-profile' | 'invalid-value' };
 
 export async function requestProfileSuggestions(): Promise<RequestSuggestionsResult> {
   const { user } = await requireUser();
@@ -19,17 +23,12 @@ export async function requestProfileSuggestions(): Promise<RequestSuggestionsRes
     with: { voiceProfile: true },
   });
   if (!restaurant?.voiceProfile) {
-    return { ok: false, reason: 'error', message: 'No voice profile found' };
+    return { ok: false, reason: 'no-profile' };
   }
 
   const edits = await getOwnerEditExamples(restaurant.id);
   if (edits.length === 0) {
-    return {
-      ok: false,
-      reason: 'no-edits',
-      message:
-        'No edits yet — edit a draft and save first so the AI has something to learn from.',
-    };
+    return { ok: false, reason: 'no-edits' };
   }
 
   const profile: VoiceProfileInput = {
@@ -46,32 +45,32 @@ export async function requestProfileSuggestions(): Promise<RequestSuggestionsRes
     return { ok: true, suggestions };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
-      return { ok: false, reason: 'quota', message: 'Daily Gemini quota exhausted. Try tomorrow.' };
+    if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('rate_limit')) {
+      return { ok: false, reason: 'quota' };
     }
     console.error('requestProfileSuggestions failed:', err);
-    return { ok: false, reason: 'error', message: 'Could not generate suggestions.' };
+    return { ok: false, reason: 'error' };
   }
 }
 
 export async function applyProfileChange(
   field: ProfileField,
   value: string
-): Promise<{ ok: boolean; message?: string }> {
+): Promise<ApplyProfileChangeResult> {
   const { user } = await requireUser();
   const restaurant = await db.query.restaurants.findFirst({
     where: eq(restaurants.userId, user.id),
     with: { voiceProfile: true },
   });
-  if (!restaurant?.voiceProfile) return { ok: false, message: 'No voice profile' };
+  if (!restaurant?.voiceProfile) return { ok: false, reason: 'no-profile' };
 
   const update: Record<string, unknown> = { updatedAt: new Date() };
 
   if (field === 'formality') {
-    if (!['warm', 'formal', 'casual'].includes(value)) return { ok: false, message: 'Invalid value' };
+    if (!['warm', 'formal', 'casual'].includes(value)) return { ok: false, reason: 'invalid-value' };
     update.formality = value;
   } else if (field === 'arabicDialect') {
-    if (!['gulf', 'msa', 'mixed'].includes(value)) return { ok: false, message: 'Invalid value' };
+    if (!['gulf', 'msa', 'mixed'].includes(value)) return { ok: false, reason: 'invalid-value' };
     update.arabicDialect = value;
   } else if (field === 'useReligiousPhrases') {
     update.useReligiousPhrases = value === 'true';

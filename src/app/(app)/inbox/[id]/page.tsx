@@ -96,6 +96,7 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
           </div>
           <RegenerateButton
             reviewId={review.id}
+            locale={locale}
             label={
               allDrafts.length === 0
                 ? locale === 'en'

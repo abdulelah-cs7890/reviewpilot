@@ -4,14 +4,31 @@ import { useTransition } from 'react';
 import { toast } from 'sonner';
 import { regenerateDraft, type RegenerateResult } from '@/app/(app)/inbox/[id]/regenerate-action';
 
+type Reason = Extract<RegenerateResult, { ok: false }>['reason'];
+
+const ERROR_LABELS: Record<'ar' | 'en', Record<Reason, string>> = {
+  ar: {
+    'not-found': 'لم يتم العثور على التقييم',
+    quota: 'الحصة اليومية لـ AI انتهت. جرّب لاحقاً.',
+    error: 'تعذّر إنشاء صياغة جديدة. حاول لاحقاً.',
+  },
+  en: {
+    'not-found': 'Review not found',
+    quota: 'Daily AI quota reached. Try again later.',
+    error: "Couldn't create a new draft. Try again later.",
+  },
+};
+
 export function RegenerateButton({
   reviewId,
   label = '↻ اقترح صياغة أخرى',
   pendingLabel = 'جارٍ إنشاء صياغة...',
+  locale = 'ar',
 }: {
   reviewId: string;
   label?: string;
   pendingLabel?: string;
+  locale?: 'ar' | 'en';
 }) {
   const [pending, startTransition] = useTransition();
 
@@ -21,9 +38,9 @@ export function RegenerateButton({
       if (result.ok) {
         toast.success('✓');
       } else if (result.reason === 'quota') {
-        toast.warning(result.message);
+        toast.warning(ERROR_LABELS[locale][result.reason]);
       } else {
-        toast.error(result.message);
+        toast.error(ERROR_LABELS[locale][result.reason]);
       }
     });
   }

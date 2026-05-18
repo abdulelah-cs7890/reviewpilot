@@ -12,7 +12,10 @@ import { requireUser } from '@/lib/auth-utils';
 
 export type ImproveResult =
   | { ok: true; draftId: string }
-  | { ok: false; reason: 'quota' | 'error' | 'empty'; message: string };
+  | {
+      ok: false;
+      reason: 'empty' | 'too-long' | 'not-found' | 'no-draft' | 'quota' | 'error';
+    };
 
 export async function improveDraftAction(
   reviewId: string,
@@ -20,10 +23,10 @@ export async function improveDraftAction(
 ): Promise<ImproveResult> {
   const trimmed = instruction.trim();
   if (trimmed.length === 0) {
-    return { ok: false, reason: 'empty', message: 'اكتب تعليمة أولاً' };
+    return { ok: false, reason: 'empty' };
   }
   if (trimmed.length > 400) {
-    return { ok: false, reason: 'error', message: 'التعليمة طويلة جداً (الحد ٤٠٠ حرف)' };
+    return { ok: false, reason: 'too-long' };
   }
 
   const { user } = await requireUser();
@@ -36,7 +39,7 @@ export async function improveDraftAction(
     .where(and(eq(reviews.id, reviewId), eq(restaurants.userId, user.id)))
     .limit(1);
   if (rows.length === 0) {
-    return { ok: false, reason: 'error', message: 'لم يتم العثور على التقييم' };
+    return { ok: false, reason: 'not-found' };
   }
   const { review: r, restaurant } = rows[0];
 
@@ -46,7 +49,7 @@ export async function improveDraftAction(
     orderBy: [desc(drafts.generatedAt)],
   });
   if (!latest) {
-    return { ok: false, reason: 'error', message: 'لا توجد مسودة لتحسينها' };
+    return { ok: false, reason: 'no-draft' };
   }
 
   const profile = await db.query.voiceProfiles.findFirst({
@@ -126,14 +129,10 @@ export async function improveDraftAction(
     return { ok: true, draftId: inserted.id };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
-      return {
-        ok: false,
-        reason: 'quota',
-        message: 'الحصة اليومية لـ Gemini انتهت. جرّب غداً.',
-      };
+    if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('rate_limit')) {
+      return { ok: false, reason: 'quota' };
     }
     console.error('improveDraftAction failed:', err);
-    return { ok: false, reason: 'error', message: 'تعذّر تطبيق التعليمة. حاول لاحقاً.' };
+    return { ok: false, reason: 'error' };
   }
 }

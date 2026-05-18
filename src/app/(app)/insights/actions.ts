@@ -8,7 +8,11 @@ import { generatePolicies, type ReplyPolicy, type PolicyExample } from '@/ai/pol
 
 export type GeneratePoliciesResult =
   | { ok: true; policies: ReplyPolicy[] }
-  | { ok: false; reason: 'insufficient-data' | 'quota' | 'error'; message: string };
+  | { ok: false; reason: 'no-restaurant' | 'insufficient-data' | 'quota' | 'error' };
+
+export type SavePolicyResult =
+  | { ok: true }
+  | { ok: false; reason: 'no-profile' };
 
 const MAX_EXAMPLES = 20;
 
@@ -17,7 +21,7 @@ export async function generateRestaurantPolicies(): Promise<GeneratePoliciesResu
   const restaurant = await db.query.restaurants.findFirst({
     where: eq(restaurants.userId, user.id),
   });
-  if (!restaurant) return { ok: false, reason: 'error', message: 'No restaurant' };
+  if (!restaurant) return { ok: false, reason: 'no-restaurant' };
 
   // Pull the latest N reviews + their latest draft (preferring editedText)
   const recentReviews = await db
@@ -43,11 +47,7 @@ export async function generateRestaurantPolicies(): Promise<GeneratePoliciesResu
   }
 
   if (examples.length < 2) {
-    return {
-      ok: false,
-      reason: 'insufficient-data',
-      message: 'Need at least 2 reviews with drafts to generate policies.',
-    };
+    return { ok: false, reason: 'insufficient-data' };
   }
 
   try {
@@ -55,11 +55,11 @@ export async function generateRestaurantPolicies(): Promise<GeneratePoliciesResu
     return { ok: true, policies };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
-      return { ok: false, reason: 'quota', message: 'Daily Gemini quota exhausted. Try tomorrow.' };
+    if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('rate_limit')) {
+      return { ok: false, reason: 'quota' };
     }
     console.error('generateRestaurantPolicies failed:', err);
-    return { ok: false, reason: 'error', message: 'Could not generate policies.' };
+    return { ok: false, reason: 'error' };
   }
 }
 
@@ -67,13 +67,13 @@ export async function generateRestaurantPolicies(): Promise<GeneratePoliciesResu
  * Append a single policy's actions to the voice profile's customInstructions.
  * Capped to keep the drafter prompt size bounded.
  */
-export async function savePolicyToProfile(policy: ReplyPolicy): Promise<{ ok: boolean; message?: string }> {
+export async function savePolicyToProfile(policy: ReplyPolicy): Promise<SavePolicyResult> {
   const { user } = await requireUser();
   const restaurant = await db.query.restaurants.findFirst({
     where: eq(restaurants.userId, user.id),
     with: { voiceProfile: true },
   });
-  if (!restaurant?.voiceProfile) return { ok: false, message: 'No voice profile' };
+  if (!restaurant?.voiceProfile) return { ok: false, reason: 'no-profile' };
 
   const block = `When ${policy.conditions.trim().replace(/\.$/, '')}: ${policy.actions
     .map((a) => a.trim().replace(/\.$/, ''))

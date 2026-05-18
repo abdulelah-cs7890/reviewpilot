@@ -63,28 +63,37 @@ async function ownsDraft(userId: string, draftId: string): Promise<{ reviewId: s
   return row[0] ?? null;
 }
 
-export async function scheduleDraftAction(draftId: string, scheduledFor: string) {
+export type ScheduleResult =
+  | { ok: true }
+  | { ok: false; reason: 'unauthorized' | 'invalid-date' | 'past-date' };
+
+export type CancelScheduleResult =
+  | { ok: true }
+  | { ok: false; reason: 'unauthorized' };
+
+export async function scheduleDraftAction(
+  draftId: string,
+  scheduledFor: string
+): Promise<ScheduleResult> {
   const { user } = await requireUser();
   const owned = await ownsDraft(user.id, draftId);
-  if (!owned) return { ok: false as const, message: 'Not authorized' };
+  if (!owned) return { ok: false, reason: 'unauthorized' };
 
   const when = new Date(scheduledFor);
-  if (Number.isNaN(when.getTime())) return { ok: false as const, message: 'Invalid date' };
-  if (when.getTime() <= Date.now()) {
-    return { ok: false as const, message: 'Pick a future time' };
-  }
+  if (Number.isNaN(when.getTime())) return { ok: false, reason: 'invalid-date' };
+  if (when.getTime() <= Date.now()) return { ok: false, reason: 'past-date' };
 
   await db.update(drafts).set({ scheduledFor: when }).where(eq(drafts.id, draftId));
   revalidatePath(`/inbox/${owned.reviewId}`);
-  return { ok: true as const };
+  return { ok: true };
 }
 
-export async function cancelScheduleAction(draftId: string) {
+export async function cancelScheduleAction(draftId: string): Promise<CancelScheduleResult> {
   const { user } = await requireUser();
   const owned = await ownsDraft(user.id, draftId);
-  if (!owned) return { ok: false as const, message: 'Not authorized' };
+  if (!owned) return { ok: false, reason: 'unauthorized' };
 
   await db.update(drafts).set({ scheduledFor: null }).where(eq(drafts.id, draftId));
   revalidatePath(`/inbox/${owned.reviewId}`);
-  return { ok: true as const };
+  return { ok: true };
 }

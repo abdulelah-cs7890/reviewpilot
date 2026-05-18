@@ -141,9 +141,9 @@ export function StreamingManualReviewForm({
           router.push(`/inbox/${(payload as { reviewId: string }).reviewId}`);
         } else if (eventType === 'error') {
           setPhase('error');
-          const err = payload as { reason: string; message: string };
-          if (err.reason === 'quota') toast.warning(err.message);
-          else toast.error(err.message);
+          const err = payload as { reason: 'quota' | 'error' };
+          if (err.reason === 'quota') toast.warning(t.quotaToast);
+          else toast.error(t.errorToast);
         }
       }
     }

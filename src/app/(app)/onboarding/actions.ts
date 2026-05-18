@@ -16,7 +16,7 @@ const schema = z.object({
 
 export type OnboardingState =
   | { status: 'idle' }
-  | { status: 'error'; message: string }
+  | { status: 'error'; reason: 'validation' }
   | { status: 'success' };
 
 export async function completeOnboarding(
@@ -35,7 +35,7 @@ export async function completeOnboarding(
   });
 
   if (!parsed.success) {
-    return { status: 'error', message: 'تحقق من البيانات' };
+    return { status: 'error', reason: 'validation' };
   }
 
   const [restaurant] = await db

@@ -15,6 +15,8 @@ interface Labels {
   pastError: string;
   successToast: string;
   cancelToast: string;
+  unauthorizedError: string;
+  invalidDateError: string;
 }
 
 const LABELS: Record<'ar' | 'en', Labels> = {
@@ -28,6 +30,8 @@ const LABELS: Record<'ar' | 'en', Labels> = {
     pastError: 'الوقت يجب أن يكون مستقبلي',
     successToast: 'تمت جدولة الرد',
     cancelToast: 'تم إلغاء الجدولة',
+    unauthorizedError: 'غير مصرّح به',
+    invalidDateError: 'تاريخ غير صالح',
   },
   en: {
     schedule: '⏱ Schedule',
@@ -39,6 +43,8 @@ const LABELS: Record<'ar' | 'en', Labels> = {
     pastError: 'Time must be in the future',
     successToast: 'Reply scheduled',
     cancelToast: 'Schedule cancelled',
+    unauthorizedError: 'Not authorized',
+    invalidDateError: 'Invalid date',
   },
 };
 
@@ -75,7 +81,7 @@ export function ScheduleSendButton({
             startTransition(async () => {
               const res = await cancelScheduleAction(draftId);
               if (res.ok) toast.success(t.cancelToast);
-              else toast.error(res.message);
+              else toast.error(t.unauthorizedError);
             })
           }
           className="inline-flex items-center gap-1 text-xs text-amber-700 underline hover:text-amber-900 disabled:opacity-50"
@@ -107,8 +113,12 @@ export function ScheduleSendButton({
         toast.success(t.successToast);
         setIsOpen(false);
         setWhen('');
+      } else if (res.reason === 'past-date') {
+        toast.error(t.pastError);
+      } else if (res.reason === 'invalid-date') {
+        toast.error(t.invalidDateError);
       } else {
-        toast.error(res.message);
+        toast.error(t.unauthorizedError);
       }
     });
   }
