@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { eq, sql, desc, and, gte, lte, type SQL } from 'drizzle-orm';
-import { db, restaurants, reviews } from '@/db';
+import { eq, sql, desc, and, gte, lte, isNotNull, type SQL } from 'drizzle-orm';
+import { db, restaurants, reviews, drafts, voiceProfiles } from '@/db';
 import { requireUser } from '@/lib/auth-utils';
 import { getUiLocale } from '@/lib/locale';
 import { appCopy } from '@/lib/app-copy';
@@ -11,6 +11,10 @@ import { StatusBadge } from '@/components/inbox/StatusBadge';
 import { SeverityBadge } from '@/components/inbox/SeverityBadge';
 import { InboxFilters } from '@/components/inbox/InboxFilters';
 import { WelcomeBanner } from '@/components/inbox/WelcomeBanner';
+import {
+  GettingStartedPanel,
+  type ChecklistItem,
+} from '@/components/inbox/GettingStartedPanel';
 import { StarRating } from '@/components/inbox/StarRating';
 import { customerHref } from '@/lib/customer-name';
 
@@ -69,11 +73,46 @@ export default async function InboxPage({
 
   const totalCount = await db.$count(reviews, eq(reviews.restaurantId, restaurant.id));
 
+  // Getting-started checklist completion checks (non-demo users only)
+  let checklistItems: ChecklistItem[] | null = null;
+  if (!isDemo) {
+    const voiceProfile = await db.query.voiceProfiles.findFirst({
+      where: eq(voiceProfiles.restaurantId, restaurant.id),
+    });
+    // "Edited a draft": any draft for this restaurant has a non-null editedText.
+    const editedCount = await db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(drafts)
+      .innerJoin(reviews, eq(drafts.reviewId, reviews.id))
+      .where(
+        and(eq(reviews.restaurantId, restaurant.id), isNotNull(drafts.editedText))
+      )
+      .then((r) => r[0]?.n ?? 0);
+    const importedCount = await db.$count(
+      reviews,
+      and(eq(reviews.restaurantId, restaurant.id), eq(reviews.source, 'import'))
+    );
+    const tuned =
+      !!voiceProfile &&
+      voiceProfile.updatedAt.getTime() - voiceProfile.createdAt.getTime() > 60_000;
+    checklistItems = [
+      { id: 'restaurant', done: true },
+      { id: 'paste', done: totalCount > 0 },
+      { id: 'edit', done: editedCount > 0 },
+      { id: 'tune', done: tuned },
+      { id: 'import', done: importedCount > 0, optional: true },
+    ];
+  }
+  const firstReviewId = rows[0]?.id ?? null;
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-ink-900">
+          <h1
+            data-tour="inbox-title"
+            className="text-2xl font-semibold tracking-tight text-ink-900"
+          >
             {t.inbox.title}
           </h1>
           <p className="mt-1 text-sm text-ink-600">
@@ -103,6 +142,14 @@ export default async function InboxPage({
       </div>
 
       <WelcomeBanner isDemo={isDemo} t={t.welcomeBanner} />
+
+      {checklistItems && (
+        <GettingStartedPanel
+          items={checklistItems}
+          locale={locale}
+          firstReviewId={firstReviewId}
+        />
+      )}
 
       <div className="mb-6 rounded-2xl border border-ink-100 bg-white p-4">
         <InboxFilters t={t.filters} locale={locale} />

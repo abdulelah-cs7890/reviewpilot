@@ -7,6 +7,8 @@ import { getUiLocale, dirFor } from '@/lib/locale';
 import { appCopy } from '@/lib/app-copy';
 import { SignOutButton } from '@/components/SignOutButton';
 import { LanguageToggle } from '@/components/LanguageToggle';
+import { ProductTour } from '@/components/tour/ProductTour';
+import { TourTrigger } from '@/components/tour/TourTrigger';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const result = await getCurrentUser();
@@ -78,27 +80,40 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                   <Link href="/dashboard" className="text-ink-600 hover:text-ink-900">
                     {t.nav.dashboard}
                   </Link>
-                  <Link href="/insights" className="text-ink-600 hover:text-ink-900">
+                  <Link
+                    href="/insights"
+                    data-tour="insights"
+                    className="text-ink-600 hover:text-ink-900"
+                  >
                     {locale === 'en' ? 'Insights' : 'تحليلات'}
                   </Link>
-                  <Link href="/settings" className="text-ink-600 hover:text-ink-900">
+                  <Link
+                    href="/settings"
+                    data-tour="settings"
+                    className="text-ink-600 hover:text-ink-900"
+                  >
                     {t.nav.settings}
                   </Link>
                   <Link
                     href="/inbox/new"
+                    data-tour="add-button"
                     className="rounded-lg bg-ink-100 px-3 py-1 text-ink-700 hover:bg-ink-200"
                   >
                     {t.nav.addReview}
                   </Link>
                 </>
               )}
-              <LanguageToggle locale={locale} />
+              <div data-tour="language-toggle">
+                <LanguageToggle locale={locale} />
+              </div>
+              <TourTrigger locale={locale} />
               <SignOutButton label={t.nav.signOut} />
             </nav>
           </div>
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">{children}</main>
+      <ProductTour locale={locale} />
     </div>
   );
 }
