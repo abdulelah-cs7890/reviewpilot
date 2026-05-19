@@ -157,17 +157,20 @@ Next.js 15 (App Router, Turbopack) · TypeScript · Drizzle ORM · Neon Postgres
 
 ## What's deferred (intentionally)
 
-- **Real GBP API posting.** The "Schedule reply for later" feature flips draft status to `responded` via a Vercel cron, but doesn't actually publish to Google — that's a multi-week GBP API approval process out of scope for a portfolio project.
+These are scope decisions, not bugs. Each is a "would build if this were a real SaaS, but it's a portfolio project" call.
+
+- **Real GBP API posting.** The "Schedule reply for later" feature flips draft status to `responded` via a Vercel cron, but doesn't actually publish to Google — that's a multi-week GBP API approval process. Out of scope for a single-developer portfolio piece.
+- **Multi-user invites / team accounts.** One user per restaurant. A real restaurant would have an owner + assistant manager sharing access; that needs a `restaurant_members` join table plus refactoring every "find restaurant for user" query (~15+ sites) plus a token-based invite/accept flow. Audited in [Phase 14](#notes-for-portfolio-reviewers), explicitly deferred — the refactor risk doesn't pay for itself in portfolio value since reviewers won't sign up two test accounts to try it.
 - **WhatsApp Cloud API.** Referenced in prompts ("offer WhatsApp follow-up") but the actual send is the owner's job.
-- **Multi-branch / multi-restaurant per user.** One restaurant per user account for now.
-- **Real-time push notifications.** Owner refreshes the inbox manually.
-- **Production: Gemini stays the default.** Even though Groq is more permissive locally, the live Vercel deploy uses Gemini (perpetual free tier, no credit dependency).
+- **Real-time push notifications.** Owner sees unread counts via an in-app nav badge ([Phase 14](#notes-for-portfolio-reviewers)) but no email/web-push when reviews arrive.
+- **Pricing / billing.** No Stripe, no usage tracking. Aligned with the "no money spent" constraint.
+- **Production AI provider: Gemini stays the default.** Even though Groq is more permissive locally, the live Vercel deploy uses Gemini (perpetual free tier, no credit dependency). The provider abstraction means either works.
 
 ---
 
 ## Notes for portfolio reviewers
 
-This is a single-developer project shipped across **13 phases**, each visible as a sequence of commits in the git log. Phases of note:
+This is a single-developer project shipped across **15 phases**, each visible as a sequence of commits in the git log. Phases of note:
 
 - **Phase 1** — 25-review golden set + typed `responseSchema` + Gulf-Arabic prompt tuning
 - **Phase 4** — Three-stage AI pipeline (analyzer → drafter → meta-grader)
@@ -176,7 +179,11 @@ This is a single-developer project shipped across **13 phases**, each visible as
 - **Phase 8** — Severity classifier + topic trends + schedule-for-later + auto-tune + policy generator
 - **Phase 9** — Real-data CSV ingestion + benchmark suite + AI quality dashboard
 - **Phase 11** — Provider abstraction (Groq + Gemini + Anthropic)
-- **Phase 12** — Analyzer schema fix + full server↔client error-code refactor
-- **Phase 13** — README + screenshot refresh (this one)
+- **Phase 12** — Analyzer schema fix + full server↔client error-code refactor (every action returns reason codes, clients localize)
+- **Phase 13** — README + screenshot refresh
+- **Phase 14** — User-readiness audit + Tier 1/2 fixes: account deletion + email change + restaurant rename + CSV export + Privacy/Terms pages + text search + unread badge + `/admin` observability
+- **Phase 15** — First-time user walkthrough: DB-state-driven Getting Started checklist + opt-in product tour overlay
 
 What you're looking at is not a demo — it's a working tool with measurable AI quality on real data, with the iteration history visible in `git log`. Run `npm run benchmark` to reproduce the numbers in [`benchmark-results.md`](benchmark-results.md).
+
+Every gap in the "What's deferred" section above is a deliberate scope call — audited in Phase 14, not an oversight.
