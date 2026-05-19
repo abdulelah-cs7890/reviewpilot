@@ -33,6 +33,12 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
   });
   if (!review) notFound();
 
+  // Mark the review as seen on first visit. Fire-and-forget; the user
+  // doesn't need to wait for this to render.
+  if (!review.seenAt) {
+    void db.update(reviews).set({ seenAt: new Date() }).where(eq(reviews.id, review.id));
+  }
+
   const allDrafts = await db.query.drafts.findMany({
     where: eq(drafts.reviewId, review.id),
     orderBy: [desc(drafts.generatedAt)],

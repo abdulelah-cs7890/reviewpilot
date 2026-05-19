@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { eq } from 'drizzle-orm';
-import { db, restaurants } from '@/db';
+import { eq, and, isNull, sql } from 'drizzle-orm';
+import { db, restaurants, reviews } from '@/db';
 import { getCurrentUser } from '@/lib/auth-utils';
 import { getUiLocale, dirFor } from '@/lib/locale';
 import { appCopy } from '@/lib/app-copy';
@@ -17,6 +17,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const restaurant = await db.query.restaurants.findFirst({
     where: eq(restaurants.userId, result.user.id),
   });
+
+  // Unread count for the nav badge — reviews the owner hasn't opened yet
+  // and that aren't already ignored. Cheap count query.
+  const unreadCount = restaurant
+    ? await db.$count(
+        reviews,
+        and(
+          eq(reviews.restaurantId, restaurant.id),
+          isNull(reviews.seenAt),
+          sql`${reviews.status} != 'ignored'`
+        )
+      )
+    : 0;
 
   const locale = await getUiLocale();
   const t = appCopy[locale];
@@ -44,8 +57,23 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <nav className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
               {restaurant && (
                 <>
-                  <Link href="/inbox" className="text-ink-600 hover:text-ink-900">
+                  <Link
+                    href="/inbox"
+                    className="inline-flex items-center gap-1.5 text-ink-600 hover:text-ink-900"
+                  >
                     {t.nav.reviews}
+                    {unreadCount > 0 && (
+                      <span
+                        className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white"
+                        aria-label={
+                          locale === 'en'
+                            ? `${unreadCount} unread reviews`
+                            : `${unreadCount} تقييم غير مقروء`
+                        }
+                      >
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
                   </Link>
                   <Link href="/dashboard" className="text-ink-600 hover:text-ink-900">
                     {t.nav.dashboard}

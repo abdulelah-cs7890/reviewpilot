@@ -164,7 +164,8 @@ export function InboxFilters({ t, locale = 'ar' }: { t: FiltersCopy; locale?: 'a
                   type="button"
                   onClick={() => setFilter(g.key, active ? null : opt.value)}
                   className={
-                    'rounded-full px-3 py-1 text-xs transition ' +
+                    // py-1.5 = ~36px tap target on mobile (was py-1 ~28px)
+                    'rounded-full px-3 py-1.5 text-xs transition ' +
                     (active
                       ? 'bg-ink-900 text-ink-50'
                       : 'bg-white text-ink-700 ring-1 ring-ink-200 hover:bg-ink-100')

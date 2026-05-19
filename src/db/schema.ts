@@ -169,6 +169,8 @@ export const reviews = pgTable(
     urgency: urgencyEnum('urgency'),
     severity: severityEnum('severity'),
     status: reviewStatusEnum('status').notNull().default('pending'),
+    // null = unseen by the owner; set when they open the detail page.
+    seenAt: timestamp('seen_at'),
   },
   (t) => ({
     restaurantIdx: index('reviews_restaurant_idx').on(t.restaurantId),
