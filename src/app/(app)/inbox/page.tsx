@@ -41,6 +41,7 @@ export default async function InboxPage({
   const language = typeof sp.language === 'string' && LANGUAGE_VALUES.has(sp.language) ? sp.language : null;
   const status = typeof sp.status === 'string' && STATUS_VALUES.has(sp.status) ? sp.status : null;
   const severity = typeof sp.severity === 'string' && SEVERITY_VALUES.has(sp.severity) ? sp.severity : null;
+  const q = typeof sp.q === 'string' ? sp.q.trim().slice(0, 200) : '';
 
   const conditions: SQL[] = [eq(reviews.restaurantId, restaurant.id)];
   if (urgency) conditions.push(sql`${reviews.urgency} = ${urgency}`);
@@ -50,6 +51,12 @@ export default async function InboxPage({
   if (sentiment === 'positive') conditions.push(gte(reviews.sentiment, 1));
   if (sentiment === 'negative') conditions.push(lte(reviews.sentiment, -1));
   if (sentiment === 'neutral') conditions.push(eq(reviews.sentiment, 0));
+  if (q) {
+    const pattern = `%${q.replace(/[%_]/g, (m) => '\\' + m)}%`;
+    conditions.push(
+      sql`(${reviews.reviewText} ILIKE ${pattern} OR ${reviews.authorName} ILIKE ${pattern})`
+    );
+  }
 
   const rows = await db
     .select()
@@ -98,7 +105,7 @@ export default async function InboxPage({
       <WelcomeBanner isDemo={isDemo} t={t.welcomeBanner} />
 
       <div className="mb-6 rounded-2xl border border-ink-100 bg-white p-4">
-        <InboxFilters t={t.filters} />
+        <InboxFilters t={t.filters} locale={locale} />
       </div>
 
       {rows.length === 0 ? (

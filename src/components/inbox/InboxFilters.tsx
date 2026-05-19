@@ -1,7 +1,8 @@
 'use client';
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
+import { Search } from 'lucide-react';
 
 type GroupKey = 'urgency' | 'sentiment' | 'language' | 'status' | 'severity';
 
@@ -12,6 +13,7 @@ interface FiltersCopy {
   status: string;
   severity: string;
   clear: string;
+  searchPlaceholder?: string;
   urgent: string;
   important: string;
   normal: string;
@@ -30,11 +32,35 @@ interface FiltersCopy {
   sevSpam: string;
 }
 
-export function InboxFilters({ t }: { t: FiltersCopy }) {
+export function InboxFilters({ t, locale = 'ar' }: { t: FiltersCopy; locale?: 'ar' | 'en' }) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
   const [pending, startTransition] = useTransition();
+  const initialQ = params.get('q') ?? '';
+  const [searchValue, setSearchValue] = useState(initialQ);
+
+  // Sync local search state with URL when query param changes externally
+  useEffect(() => {
+    setSearchValue(initialQ);
+  }, [initialQ]);
+
+  // Debounce search input → URL
+  useEffect(() => {
+    const trimmed = searchValue.trim();
+    if (trimmed === initialQ) return;
+    const handle = setTimeout(() => {
+      const next = new URLSearchParams(params.toString());
+      if (trimmed) next.set('q', trimmed);
+      else next.delete('q');
+      const qs = next.toString();
+      startTransition(() => {
+        router.push(qs ? `${pathname}?${qs}` : pathname);
+      });
+    }, 350);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchValue]);
 
   const groups: Array<{
     key: GroupKey;
@@ -102,10 +128,29 @@ export function InboxFilters({ t }: { t: FiltersCopy }) {
     });
   }
 
-  const hasAnyFilter = groups.some((g) => params.get(g.key));
+  const hasAnyFilter = groups.some((g) => params.get(g.key)) || !!params.get('q');
+
+  const searchPlaceholder =
+    t.searchPlaceholder ??
+    (locale === 'en' ? 'Search reviews or author…' : 'ابحث في التقييمات أو الاسم...');
 
   return (
     <div className={`space-y-3 ${pending ? 'opacity-60' : ''}`}>
+      <div className="relative">
+        <Search
+          className="pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400"
+          style={locale === 'ar' ? { right: '12px' } : { left: '12px' }}
+        />
+        <input
+          type="search"
+          value={searchValue}
+          onChange={(e) => setSearchValue(e.target.value)}
+          placeholder={searchPlaceholder}
+          className={`w-full rounded-xl border border-ink-200 bg-white py-2.5 text-sm text-ink-900 placeholder-ink-400 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 ${
+            locale === 'ar' ? 'pe-10 ps-4' : 'ps-10 pe-4'
+          }`}
+        />
+      </div>
       {groups.map((g) => {
         const current = params.get(g.key);
         return (

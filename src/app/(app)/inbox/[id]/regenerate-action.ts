@@ -11,7 +11,7 @@ import { requireUser } from '@/lib/auth-utils';
 
 export type RegenerateResult =
   | { ok: true; draftId: string }
-  | { ok: false; reason: 'not-found' | 'quota' | 'error' };
+  | { ok: false; reason: 'not-found' | 'quota' | 'unavailable' | 'error' };
 
 export async function regenerateDraft(reviewId: string): Promise<RegenerateResult> {
   const { user } = await requireUser();
@@ -112,6 +112,9 @@ export async function regenerateDraft(reviewId: string): Promise<RegenerateResul
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('rate_limit')) {
       return { ok: false, reason: 'quota' };
+    }
+    if (msg.includes('No AI provider configured') || msg.includes('API_KEY not set')) {
+      return { ok: false, reason: 'unavailable' };
     }
     console.error('regenerateDraft failed:', err);
     return { ok: false, reason: 'error' };

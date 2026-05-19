@@ -117,7 +117,16 @@ export function LandingPage({ locale }: { locale: Locale }) {
       </section>
 
       <footer className="border-t border-ink-100 py-8 text-center text-sm text-ink-500">
-        © {new Date().getFullYear()} · {t.footer.tagline}
+        <div>© {new Date().getFullYear()} · {t.footer.tagline}</div>
+        <div className="mt-2 flex justify-center gap-4 text-xs">
+          <a href="/privacy" className="hover:text-ink-800">
+            {locale === 'en' ? 'Privacy' : 'الخصوصية'}
+          </a>
+          <span aria-hidden="true">·</span>
+          <a href="/terms" className="hover:text-ink-800">
+            {locale === 'en' ? 'Terms' : 'الشروط'}
+          </a>
+        </div>
       </footer>
     </main>
   );

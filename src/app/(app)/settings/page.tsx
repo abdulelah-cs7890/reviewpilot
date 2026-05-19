@@ -10,9 +10,10 @@ import { getOwnerEditExamples } from '@/ai/owner-edits';
 import { SettingsForm } from '@/components/settings/SettingsForm';
 import { defaultsFromRow } from '@/components/voice-profile/VoiceProfileFields';
 import { ProfileTunerPanel } from '@/components/settings/ProfileTunerPanel';
+import { AccountSection } from '@/components/settings/AccountSection';
 
 export default async function SettingsPage() {
-  const { user } = await requireUser();
+  const { user, isDemo } = await requireUser();
   const locale = await getUiLocale();
   const t = appCopy[locale].settings;
   const restaurant = await db.query.restaurants.findFirst({
@@ -66,6 +67,15 @@ export default async function SettingsPage() {
 
       {/* Auto-tune voice profile panel */}
       <ProfileTunerPanel locale={locale} />
+
+      {/* Account: rename / email / export / delete */}
+      <AccountSection
+        locale={locale}
+        isDemo={isDemo}
+        currentEmail={user.email}
+        currentName={restaurant.name}
+        currentNameEn={restaurant.nameEn}
+      />
 
       {/* Learn-from-edits panel */}
       <div className="mt-6 rounded-3xl border border-ink-100 bg-white p-6 shadow-sm sm:p-8">

@@ -10,11 +10,13 @@ const ERROR_LABELS: Record<'ar' | 'en', Record<Reason, string>> = {
   ar: {
     'not-found': 'لم يتم العثور على التقييم',
     quota: 'الحصة اليومية لـ AI انتهت. جرّب لاحقاً.',
+    unavailable: 'خدمة الذكاء الاصطناعي غير متاحة حالياً. جرّب بعد دقائق.',
     error: 'تعذّر إنشاء صياغة جديدة. حاول لاحقاً.',
   },
   en: {
     'not-found': 'Review not found',
     quota: 'Daily AI quota reached. Try again later.',
+    unavailable: 'AI service is currently unavailable. Please try again in a few minutes.',
     error: "Couldn't create a new draft. Try again later.",
   },
 };
@@ -37,7 +39,7 @@ export function RegenerateButton({
       const result: RegenerateResult = await regenerateDraft(reviewId);
       if (result.ok) {
         toast.success('✓');
-      } else if (result.reason === 'quota') {
+      } else if (result.reason === 'quota' || result.reason === 'unavailable') {
         toast.warning(ERROR_LABELS[locale][result.reason]);
       } else {
         toast.error(ERROR_LABELS[locale][result.reason]);
